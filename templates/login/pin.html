@@ -1,0 +1,69 @@
+{% extends "auth_base.html" %}
+
+{% block title %}PIN Verification{% endblock %}
+
+{% block subtitle %}Enter your 6-digit PIN{% endblock %}
+
+{% block content %}
+<form id="pinForm">
+    <div class="field">
+        <label for="pinInput">6-digit PIN</label>
+        <input type="password" id="pinInput" placeholder="Enter 6-digit PIN" maxlength="6" inputmode="numeric" autofocus
+            required>
+    </div>
+
+    <button type="submit" class="btn-primary" id="verifyBtn">Verify →</button>
+</form>
+
+<script>
+    document.getElementById('pinForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const pin = document.getElementById('pinInput').value;
+        const btn = document.getElementById('verifyBtn');
+        const error = document.getElementById('loginError');
+
+        if (!pin || pin.length !== 6) {
+            error.textContent = 'Please enter a 6-digit PIN';
+            error.classList.add('show');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Verifying...';
+        error.classList.remove('show');
+
+        fetch('/auth/verify-pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin: pin })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.redirect || '/dashboard';
+                } else {
+                    error.textContent = data.error || 'Invalid PIN';
+                    error.classList.add('show');
+                    btn.disabled = false;
+                    btn.textContent = 'Verify →';
+                    document.getElementById('pinInput').value = '';
+                    document.getElementById('pinInput').focus();
+                }
+            })
+            .catch(() => {
+                error.textContent = 'An error occurred. Please try again.';
+                error.classList.add('show');
+                btn.disabled = false;
+                btn.textContent = 'Verify →';
+            });
+    });
+
+    // Auto-submit when 6 digits entered
+    document.getElementById('pinInput').addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '');
+        if (this.value.length === 6) {
+            document.getElementById('pinForm').dispatchEvent(new Event('submit'));
+        }
+    });
+</script>
+{% endblock %}

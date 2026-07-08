@@ -1,0 +1,297 @@
+<!-- Global Scripts -->
+<script>
+    // Global utility functions
+    function showNotification(message, type = 'info', duration = 3000) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+
+        // Add icon based on type
+        const icons = {
+            'success': '✅',
+            'error': '❌',
+            'warning': '⚠️',
+            'info': 'ℹ️'
+        };
+        notification.innerHTML = `${icons[type] || 'ℹ️'} ${message}`;
+
+        document.body.appendChild(notification);
+
+        // Auto-remove after duration
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, duration);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function formatRelativeTime(dateString) {
+        if (!dateString) return '-';
+        const now = new Date();
+        const time = new Date(dateString);
+        const diff = Math.floor((now - time) / 1000);
+
+        if (diff < 60) return 'Just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+        if (diff < 2592000) return Math.floor(diff / 604800) + 'w ago';
+        if (diff < 31536000) return Math.floor(diff / 2592000) + 'mo ago';
+        return Math.floor(diff / 31536000) + 'y ago';
+    }
+
+    function formatSize(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+    }
+
+    function maskValue(value, visibleChars = 4) {
+        if (!value) return '';
+        if (value.length <= visibleChars) return '•'.repeat(value.length);
+        return '•'.repeat(value.length - visibleChars) + value.slice(-visibleChars);
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    function getCategoryIcon(category) {
+        const icons = {
+            'identity': '🪪',
+            'banking': '🏦',
+            'passwords': '🔑',
+            'notes': '📝',
+            'documents': '📄',
+            'emergency': '🚨',
+            'digital_assets': '💻',
+            'backup': '💾',
+            'settings': '⚙️',
+            'activity': '📋'
+        };
+        return icons[category] || '📦';
+    }
+
+    function copyToClipboard(text) {
+        if (!text) return false;
+
+        navigator.clipboard.writeText(text).then(() => {
+            showNotification('Copied to clipboard!', 'success');
+            return true;
+        }).catch(() => {
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showNotification('Copied to clipboard!', 'success');
+                document.body.removeChild(textarea);
+                return true;
+            } catch (err) {
+                document.body.removeChild(textarea);
+                showNotification('Failed to copy', 'error');
+                return false;
+            }
+        });
+    }
+
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+    }
+
+    function redirectTo(url) {
+        window.location.href = url;
+    }
+
+    function reloadPage() {
+        window.location.reload();
+    }
+
+    // Notification styles (injected once)
+    (function () {
+        const style = document.createElement('style');
+        style.textContent = `
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 10000;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+            animation: slideIn 0.3s ease;
+            border: 1px solid;
+        }
+        
+        .notification.success {
+            background: rgba(76,175,80,0.12);
+            color: #4caf50;
+            border-color: rgba(76,175,80,0.3);
+        }
+        
+        .notification.error {
+            background: rgba(239,83,80,0.12);
+            color: #ef5350;
+            border-color: rgba(239,83,80,0.3);
+        }
+        
+        .notification.warning {
+            background: rgba(255,193,7,0.12);
+            color: #ffc107;
+            border-color: rgba(255,193,7,0.3);
+        }
+        
+        .notification.info {
+            background: rgba(42,107,255,0.12);
+            color: #4a85ff;
+            border-color: rgba(42,107,255,0.3);
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .notification {
+                top: 70px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                font-size: 13px;
+                padding: 10px 16px;
+            }
+        }
+    `;
+        document.head.appendChild(style);
+    })();
+
+    // Session management
+    (function () {
+        const SESSION_CHECK_INTERVAL = 60000; // Check every minute
+        let inactivityTimer = null;
+        const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+
+        function resetInactivityTimer() {
+            if (inactivityTimer) {
+                clearTimeout(inactivityTimer);
+            }
+            inactivityTimer = setTimeout(() => {
+                // Auto-logout on inactivity
+                fetch('/auth/logout', { method: 'POST' })
+                    .then(() => {
+                        window.location.href = '/auth/login?timeout=1';
+                    })
+                    .catch(() => {
+                        window.location.href = '/auth/login?timeout=1';
+                    });
+            }, INACTIVITY_TIMEOUT);
+        }
+
+        // Reset timer on user activity
+        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+        events.forEach(event => {
+            document.addEventListener(event, resetInactivityTimer);
+        });
+
+        // Check session validity
+        function checkSession() {
+            fetch('/auth/check-session')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.valid) {
+                        window.location.href = '/auth/login?expired=1';
+                    }
+                })
+                .catch(() => {
+                    // Session check failed, redirect to login
+                    window.location.href = '/auth/login';
+                });
+        }
+
+        // Initial timer reset
+        resetInactivityTimer();
+
+        // Periodic session check
+        setInterval(checkSession, SESSION_CHECK_INTERVAL);
+    })();
+
+    // CSRF token setup
+    (function () {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            // Add CSRF token to all fetch requests
+            const originalFetch = window.fetch;
+            window.fetch = function (url, options = {}) {
+                if (!options.headers) {
+                    options.headers = {};
+                }
+                if (!options.headers['X-CSRFToken']) {
+                    options.headers['X-CSRFToken'] = csrfToken.content;
+                }
+                return originalFetch(url, options);
+            };
+        }
+    })();
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function (e) {
+        // Ctrl+K or Cmd+K for search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            const searchInput = document.querySelector('.header-search-input, #globalSearch');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+
+        // Escape to close modals
+        if (e.key === 'Escape') {
+            const modals = document.querySelectorAll('.modal.show, .modal-overlay.show');
+            modals.forEach(modal => {
+                modal.classList.remove('show');
+                modal.style.display = 'none';
+            });
+        }
+    });
+</script>

@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}Export Backup - Private Vault{% endblock %}
+
+{% block content %}
+<div class="export-container">
+    <div class="page-header">
+        <h1>📤 Export Backup</h1>
+        <p class="subtitle">Export your vault data as an encrypted backup file</p>
+    </div>
+
+    <div class="export-options">
+        <div class="option-card">
+            <h3>Full Backup</h3>
+            <p>Export all vault data including items, files, and settings</p>
+            <button class="btn btn-primary" onclick="exportFullBackup()">
+                <span class="icon">📥</span> Export Full Backup
+            </button>
+        </div>
+
+        <div class="option-card">
+            <h3>Selective Export</h3>
+            <p>Choose specific categories and data to export</p>
+            <button class="btn btn-secondary" onclick="showSelectiveExport()">
+                <span class="icon">⚙️</span> Selective Export
+            </button>
+        </div>
+
+        <div class="option-card">
+            <h3>Backup Password</h3>
+            <p>Set a password to encrypt your backup file</p>
+            <div class="form-group">
+                <input type="password" id="exportPassword" placeholder="Enter backup password (optional)">
+                <input type="password" id="confirmExportPassword" placeholder="Confirm backup password">
+            </div>
+        </div>
+    </div>
+
+    <div class="export-history">
+        <h2>Recent Exports</h2>
+        <div id="exportHistoryList">
+            <p class="text-muted">No exports found</p>
+        </div>
+    </div>
+</div>
+
+<!-- Selective Export Modal -->
+<div id="selectiveModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⚙️ Selective Export</h3>
+            <button class="close-btn" onclick="closeModal('selectiveModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Select the categories to include in the backup:</p>
+            <div class="checkbox-grid">
+                <label><input type="checkbox" class="category-check" value="identity" checked> Identity</label>
+                <label><input type="checkbox" class="category-check" value="banking" checked> Banking</label>
+                <label><input type="checkbox" class="category-check" value="passwords" checked> Passwords</label>
+                <label><input type="checkbox" class="category-check" value="notes" checked> Notes</label>
+                <label><input type="checkbox" class="category-check" value="documents" checked> Documents</label>
+                <label><input type="checkbox" class="category-check" value="emergency" checked> Emergency</label>
+                <label><input type="checkbox" class="category-check" value="digital_assets" checked> Digital
+                    Assets</label>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('selectiveModal')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="exportSelective()">Export Selected</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    let exportInProgress = false;
+
+    function exportFullBackup() {
+        if (exportInProgress) return;
+
+        const password = document.getElementById('exportPassword').value;
+        const confirmPassword = document.getElementById('confirmExportPassword').value;
+
+        if (password && password !== confirmPassword) {
+            showNotification('Passwords do not match', 'error');
+            return;
+        }
+
+        exportInProgress = true;
+        showNotification('Preparing backup...', 'info');
+
+        const data = {
+            password: password || null
+        };
+
+        fetch('/backup/export/full', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `vault_backup_${new Date().toISOString().split('T')[0]}.enc`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                exportInProgress = false;
+                showNotification('Backup downloaded successfully!', 'success');
+                loadExportHistory();
+            })
+            .catch(error => {
+                exportInProgress = false;
+                showNotification('Error exporting backup', 'error');
+                console.error('Error exporting backup:', error);
+            });
+    }
+
+    function showSelectiveExport() {
+        document.getElementById('selectiveModal').classList.remove('hidden');
+    }
+
+    function exportSelective() {
+        const selected = [];
+        document.querySelectorAll('.category-check:checked').forEach(cb => {
+            selected.push(cb.value);
+        });
+
+        if (selected.length === 0) {
+            showNotification('Please select at least one category', 'error');
+            return;
+        }
+
+        const password = document.getElementById('exportPassword').value;
+        const confirmPassword = document.getElementById('confirmExportPassword').value;
+
+        if (password && password !== confirmPassword) {
+            showNotification('Passwords do not match', 'error');
+            return;
+        }
+
+        const data = {
+            categories: selected,
+            password: password || null
+        };
+
+        fetch('/backup/export/selective', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `vault_backup_selective_${new Date().toISOString().split('T')[0]}.enc`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                document.getElementById('selectiveModal').classList.add('hidden');
+                showNotification('Selective backup downloaded!', 'success');
+                loadExportHistory();
+            })
+            .catch(error => {
+                showNotification('Error exporting selective backup', 'error');
+                console.error('Error exporting selective backup:', error);
+            });
+    }
+
+    function loadExportHistory() {
+        fetch('/backup/export-history')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('exportHistoryList');
+                if (data.exports && data.exports.length > 0) {
+                    container.innerHTML = data.exports.map(exp => `
+                    <div class="export-item">
+                        <span>📄 ${exp.filename}</span>
+                        <span>${formatDate(exp.created_at)}</span>
+                        <span>${formatSize(exp.size)}</span>
+                        <button class="btn-sm btn-primary" onclick="downloadExport(${exp.id})">📥 Download</button>
+                        <button class="btn-sm btn-danger" onclick="deleteExport(${exp.id})">🗑️ Delete</button>
+                    </div>
+                `).join('');
+                } else {
+                    container.innerHTML = '<p class="text-muted">No exports found</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading export history:', error);
+            });
+    }
+
+    function downloadExport(id) {
+        window.location.href = `/backup/download-export/${id}`;
+    }
+
+    function deleteExport(id) {
+        if (confirm('Delete this export?')) {
+            fetch(`/backup/delete-export/${id}`, {
+                method: 'DELETE'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Export deleted', 'success');
+                        loadExportHistory();
+                    } else {
+                        showNotification('Error deleting export', 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error deleting export', 'error');
+                    console.error('Error deleting export:', error);
+                });
+        }
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+
+    // Load export history on page load
+    document.addEventListener('DOMContentLoaded', loadExportHistory);
+</script>
+{% endblock %}

@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Backup Center - Private Vault{% endblock %}
+
+{% block content %}
+<div class="backup-container">
+    <div class="page-header">
+        <h1>💾 Backup Center</h1>
+        <p class="subtitle">Manage your encrypted backups securely</p>
+    </div>
+
+    <div class="backup-actions">
+        <button class="btn btn-primary" onclick="createBackup()">
+            <span class="icon">➕</span> Create Backup
+        </button>
+        <button class="btn btn-secondary" onclick="showImportModal()">
+            <span class="icon">📥</span> Import Backup
+        </button>
+    </div>
+
+    <div class="backup-stats">
+        <div class="stat-card">
+            <div class="stat-label">Total Backups</div>
+            <div class="stat-value" id="totalBackups">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Last Backup</div>
+            <div class="stat-value" id="lastBackup">Never</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Storage Used</div>
+            <div class="stat-value" id="storageUsed">0 MB</div>
+        </div>
+    </div>
+
+    <div class="backup-history">
+        <h2>Backup History</h2>
+        <div class="table-container">
+            <table class="backup-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Size</th>
+                        <th>Items</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="backupList">
+                    <tr>
+                        <td colspan="6" class="text-center">No backups found</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div id="importModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📥 Import Backup</h3>
+            <button class="close-btn" onclick="closeModal('importModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="importForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="backupFile">Select Backup File</label>
+                    <input type="file" id="backupFile" accept=".json,.enc" required>
+                    <small>Only encrypted backup files (.json or .enc) are accepted</small>
+                </div>
+                <div class="form-group">
+                    <label for="importPassword">Backup Password</label>
+                    <input type="password" id="importPassword" placeholder="Enter backup password if encrypted"
+                        required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('importModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Restore Modal -->
+<div id="restoreModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⚠️ Restore Backup</h3>
+            <button class="close-btn" onclick="closeModal('restoreModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to restore this backup?</p>
+            <p class="warning">This will replace all current data with the backup data.</p>
+            <div class="backup-details" id="restoreDetails">
+                <p><strong>Backup ID:</strong> <span id="restoreId"></span></p>
+                <p><strong>Date:</strong> <span id="restoreDate"></span></p>
+                <p><strong>Items:</strong> <span id="restoreItems"></span></p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('restoreModal')">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmRestore()">Restore Backup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Backup Progress Modal -->
+<div id="progressModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⏳ Creating Backup...</h3>
+        </div>
+        <div class="modal-body">
+            <div class="progress-bar">
+                <div class="progress-fill" id="backupProgress" style="width: 0%"></div>
+            </div>
+            <p id="progressText">Initializing...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        loadBackupHistory();
+        loadBackupStats();
+    });
+
+    function loadBackupHistory() {
+        fetch('/backup/history')
+            .then(response => response.json())
+            .then(data => {
+                if (data.backups && data.backups.length > 0) {
+                    renderBackupList(data.backups);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading backup history:', error);
+            });
+    }
+
+    function loadBackupStats() {
+        fetch('/backup/stats')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('totalBackups').textContent = data.total || 0;
+                document.getElementById('lastBackup').textContent = data.last || 'Never';
+                document.getElementById('storageUsed').textContent = data.storage || '0 MB';
+            })
+            .catch(error => {
+                console.error('Error loading backup stats:', error);
+            });
+    }
+
+    function renderBackupList(backups) {
+        const tbody = document.getElementById('backupList');
+        tbody.innerHTML = backups.map(backup => `
+        <tr>
+            <td>#${backup.id}</td>
+            <td>${formatDate(backup.created_at)}</td>
+            <td>${formatSize(backup.size)}</td>
+            <td>${backup.items}</td>
+            <td><span class="status-badge ${backup.status}">${backup.status}</span></td>
+            <td>
+                <button class="btn-sm btn-primary" onclick="downloadBackup(${backup.id})">📥 Download</button>
+                <button class="btn-sm btn-success" onclick="showRestoreModal(${backup.id})">🔄 Restore</button>
+                <button class="btn-sm btn-danger" onclick="deleteBackup(${backup.id})">🗑️ Delete</button>
+            </td>
+        </tr>
+    `).join('');
+    }
+
+    function createBackup() {
+        document.getElementById('progressModal').classList.remove('hidden');
+        const progress = document.getElementById('backupProgress');
+        const text = document.getElementById('progressText');
+
+        let currentProgress = 0;
+        const interval = setInterval(() => {
+            currentProgress += 10;
+            progress.style.width = currentProgress + '%';
+            text.textContent = `Creating backup... ${currentProgress}%`;
+            if (currentProgress >= 100) {
+                clearInterval(interval);
+            }
+        }, 500);
+
+        fetch('/backup/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                setTimeout(() => {
+                    clearInterval(interval);
+                    progress.style.width = '100%';
+                    text.textContent = '✅ Backup created successfully!';
+                    document.getElementById('progressModal').classList.add('hidden');
+                    loadBackupHistory();
+                    loadBackupStats();
+                    showNotification('Backup created successfully!', 'success');
+                }, 2000);
+            })
+            .catch(error => {
+                clearInterval(interval);
+                document.getElementById('progressModal').classList.add('hidden');
+                showNotification('Error creating backup', 'error');
+                console.error('Error creating backup:', error);
+            });
+    }
+
+    function downloadBackup(id) {
+        window.location.href = `/backup/download/${id}`;
+    }
+
+    function showRestoreModal(id) {
+        fetch(`/backup/details/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('restoreId').textContent = data.id;
+                document.getElementById('restoreDate').textContent = formatDate(data.created_at);
+                document.getElementById('restoreItems').textContent = data.items;
+                document.getElementById('restoreModal').classList.remove('hidden');
+                document.getElementById('restoreModal').dataset.backupId = id;
+            });
+    }
+
+    function confirmRestore() {
+        const id = document.getElementById('restoreModal').dataset.backupId;
+        if (!id) return;
+
+        if (confirm('Are you sure you want to restore this backup? This action cannot be undone!')) {
+            fetch(`/backup/restore/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Backup restored successfully!', 'success');
+                        document.getElementById('restoreModal').classList.add('hidden');
+                        loadBackupHistory();
+                    } else {
+                        showNotification('Error restoring backup: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error restoring backup', 'error');
+                    console.error('Error restoring backup:', error);
+                });
+        }
+    }
+
+    function deleteBackup(id) {
+        if (confirm('Are you sure you want to delete this backup?')) {
+            fetch(`/backup/delete/${id}`, {
+                method: 'DELETE'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Backup deleted successfully!', 'success');
+                        loadBackupHistory();
+                        loadBackupStats();
+                    } else {
+                        showNotification('Error deleting backup: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error deleting backup', 'error');
+                    console.error('Error deleting backup:', error);
+                });
+        }
+    }
+
+    function showImportModal() {
+        document.getElementById('importModal').classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+
+    document.getElementById('importForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const formData = new FormData();
+        const file = document.getElementById('backupFile').files[0];
+        const password = document.getElementById('importPassword').value;
+
+        if (!file) {
+            showNotification('Please select a backup file', 'error');
+            return;
+        }
+
+        formData.append('file', file);
+        formData.append('password', password);
+
+        fetch('/backup/import', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Backup imported successfully!', 'success');
+                    document.getElementById('importModal').classList.add('hidden');
+                    loadBackupHistory();
+                    loadBackupStats();
+                    document.getElementById('importForm').reset();
+                } else {
+                    showNotification('Error importing backup: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error importing backup', 'error');
+                console.error('Error importing backup:', error);
+            });
+    });
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+</script>
+{% endblock %}

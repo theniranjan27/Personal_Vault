@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Delete - Private Vault{% endblock %}
+
+{% block content %}
+<style>
+    .confirm-container {
+        max-width: 480px;
+        margin: 80px auto;
+        padding: 40px 32px;
+        background: #0f1a2b;
+        border-radius: 24px;
+        border: 1px solid #253a55;
+        text-align: center;
+    }
+
+    .confirm-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+    }
+
+    .confirm-container h2 {
+        color: #ef5350;
+        font-size: 24px;
+        margin-bottom: 8px;
+    }
+
+    .confirm-container .subtitle {
+        color: #7b96c0;
+        font-size: 14px;
+        margin-bottom: 24px;
+    }
+
+    .warning-box {
+        background: rgba(239, 83, 80, 0.08);
+        border: 1px solid rgba(239, 83, 80, 0.2);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        text-align: left;
+    }
+
+    .warning-box .warning-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 0;
+        color: #eef4ff;
+        font-size: 14px;
+    }
+
+    .warning-box .warning-item .icon {
+        color: #ef5350;
+    }
+
+    .item-preview {
+        background: #0b1422;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        text-align: left;
+    }
+
+    .item-preview .preview-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 14px;
+    }
+
+    .item-preview .preview-row .label {
+        color: #7b96c0;
+    }
+
+    .item-preview .preview-row .value {
+        color: #eef4ff;
+    }
+
+    .confirm-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 8px;
+    }
+
+    .btn {
+        padding: 12px 32px;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-secondary {
+        background: #1f3147;
+        color: #b3ceff;
+    }
+
+    .btn-secondary:hover {
+        background: #2a405a;
+    }
+
+    .btn-danger {
+        background: #b13e4b;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #c94f5d;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(177, 62, 75, 0.3);
+    }
+
+    .confirm-container .back-link {
+        display: block;
+        margin-top: 16px;
+        color: #4a85ff;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .confirm-container .back-link:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+        .confirm-container {
+            margin: 40px auto;
+            padding: 28px 20px;
+        }
+
+        .confirm-actions {
+            flex-direction: column;
+        }
+
+        .confirm-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="confirm-container"
+     data-item-id="{{ item.id if item else '' }}"
+     data-return-url="{{ return_url or '/dashboard' }}">
+    <div class="confirm-icon">⚠️</div>
+    <h2>Delete Item?</h2>
+    <p class="subtitle">This action cannot be undone</p>
+
+    <div class="warning-box">
+        <div class="warning-item">
+            <span class="icon">🗑️</span>
+            <span>This item will be permanently deleted</span>
+        </div>
+        <div class="warning-item">
+            <span class="icon">🔒</span>
+            <span>All encrypted data will be lost</span>
+        </div>
+        <div class="warning-item">
+            <span class="icon">📋</span>
+            <span>Audit log will record this deletion</span>
+        </div>
+    </div>
+
+    <div class="item-preview">
+        <div class="preview-row">
+            <span class="label">Category</span>
+            <span class="value">{{ item.category|title if item else '-' }}</span>
+        </div>
+        <div class="preview-row">
+            <span class="label">Label</span>
+            <span class="value">{{ item.label if item else '-' }}</span>
+        </div>
+        <div class="preview-row">
+            <span class="label">Created</span>
+            <span class="value">{{ item.created_at|format_datetime if item else '-' }}</span>
+        </div>
+    </div>
+
+    <div class="confirm-actions">
+        <button class="btn btn-secondary"
+            data-url="{{ return_url or '/dashboard' }}"
+            onclick="window.location.href=this.dataset.url">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">
+            Yes, Delete
+        </button>
+    </div>
+
+    <a href="{{ return_url or '/dashboard' }}" class="back-link">← Go back</a>
+</div>
+
+<script>
+    const container = document.querySelector('.confirm-container');
+    const itemId = container.dataset.itemId;
+    const returnUrl = container.dataset.returnUrl;
+
+    function confirmDelete() {
+        if (!itemId) {
+            showNotification('Invalid item ID', 'error');
+            return;
+        }
+
+        fetch(`/vault/delete/${itemId}`, {
+            method: 'DELETE'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Item deleted successfully', 'success');
+                    setTimeout(() => {
+                        window.location.href = returnUrl;
+                    }, 1000);
+                } else {
+                    showNotification('Error deleting item: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error deleting item', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %}

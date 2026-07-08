@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: vault_db
+    environment:
+      POSTGRES_USER: vault_user
+      POSTGRES_PASSWORD: vault_password
+      POSTGRES_DB: vault_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U vault_user" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: vault_app
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://vault_user:vault_password@db:5432/vault_db
+      SECRET_KEY: ${SECRET_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      FLASK_ENV: production
+    volumes:
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+      - ./temp:/app/temp
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

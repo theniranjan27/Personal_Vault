@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Quick Add - Private Vault{% endblock %}
+
+{% block content %}
+<div class="quick-add-container">
+    <div class="page-header">
+        <h1>➕ Quick Add</h1>
+        <p class="subtitle">Add a new item to your vault quickly</p>
+    </div>
+
+    <div class="form-container">
+        <form id="quickAddForm" class="quick-add-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="category">Category *</label>
+                    <select id="category" name="category" required>
+                        <option value="">Select Category</option>
+                        <option value="identity">🪪 Identity</option>
+                        <option value="banking">🏦 Banking</option>
+                        <option value="passwords">🔑 Passwords</option>
+                        <option value="notes">📝 Notes</option>
+                        <option value="documents">📄 Documents</option>
+                        <option value="emergency">🚨 Emergency</option>
+                        <option value="digital_assets">💻 Digital Assets</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="label">Label *</label>
+                    <input type="text" id="label" name="label" placeholder="e.g., Aadhaar, SBI Account, Gmail" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="value">Value *</label>
+                    <input type="text" id="value" name="value" placeholder="Enter the value" required>
+                </div>
+            </div>
+
+            <div class="form-row" id="extraFields">
+                <!-- Dynamic fields based on category will be added here -->
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Additional notes..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="favorite" name="favorite">
+                        Add to favorites
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary"
+                    onclick="window.location.href='/dashboard'">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Item</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="recent-adds">
+        <h3>Recently Added</h3>
+        <div id="recentAddsList">
+            <p class="text-muted">No recent additions</p>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        loadRecentAdds();
+        setupCategoryFields();
+    });
+
+    function setupCategoryFields() {
+        const categorySelect = document.getElementById('category');
+        const extraFields = document.getElementById('extraFields');
+
+        const fieldTemplates = {
+            'identity': `
+            <div class="form-group">
+                <label>Type</label>
+                <select name="identity_type">
+                    <option value="aadhaar">Aadhaar</option>
+                    <option value="pan">PAN</option>
+                    <option value="passport">Passport</option>
+                    <option value="driving_license">Driving License</option>
+                    <option value="voter_id">Voter ID</option>
+                    <option value="birth_certificate">Birth Certificate</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+        `,
+            'banking': `
+            <div class="form-group">
+                <label>Bank Name</label>
+                <input type="text" name="bank_name" placeholder="Bank name">
+            </div>
+            <div class="form-group">
+                <label>IFSC Code</label>
+                <input type="text" name="ifsc" placeholder="IFSC code">
+            </div>
+            <div class="form-group">
+                <label>UPI ID</label>
+                <input type="text" name="upi" placeholder="UPI ID">
+            </div>
+        `,
+            'passwords': `
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" placeholder="Username or email">
+            </div>
+            <div class="form-group">
+                <label>URL</label>
+                <input type="url" name="url" placeholder="https://example.com">
+            </div>
+        `,
+            'emergency': `
+            <div class="form-group">
+                <label>Contact Name</label>
+                <input type="text" name="contact_name" placeholder="Full name">
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" name="phone" placeholder="Phone number">
+            </div>
+            <div class="form-group">
+                <label>Relationship</label>
+                <input type="text" name="relationship" placeholder="Relationship">
+            </div>
+        `,
+            'digital_assets': `
+            <div class="form-group">
+                <label>Asset Type</label>
+                <select name="asset_type">
+                    <option value="domain">Domain</option>
+                    <option value="hosting">Hosting</option>
+                    <option value="git">Git Repository</option>
+                    <option value="cloud">Cloud Account</option>
+                    <option value="license">Software License</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>URL</label>
+                <input type="url" name="url" placeholder="Asset URL">
+            </div>
+        `
+        };
+
+        categorySelect.addEventListener('change', function () {
+            const category = this.value;
+            if (category && fieldTemplates[category]) {
+                extraFields.innerHTML = fieldTemplates[category];
+            } else {
+                extraFields.innerHTML = '';
+            }
+        });
+    }
+
+    document.getElementById('quickAddForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const data = {
+            category: formData.get('category'),
+            label: formData.get('label'),
+            value: formData.get('value'),
+            notes: formData.get('notes'),
+            favorite: formData.get('favorite') === 'on'
+        };
+
+        // Add extra fields based on category
+        const extraData = {};
+        const extraFields = document.querySelectorAll('#extraFields input, #extraFields select');
+        extraFields.forEach(field => {
+            if (field.name) {
+                extraData[field.name] = field.value;
+            }
+        });
+        data.extra = extraData;
+
+        fetch('/dashboard/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Item added successfully!', 'success');
+                    this.reset();
+                    document.getElementById('extraFields').innerHTML = '';
+                    loadRecentAdds();
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1500);
+                } else {
+                    showNotification('Error adding item: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error adding item', 'error');
+                console.error('Error adding item:', error);
+            });
+    });
+
+    function loadRecentAdds() {
+        fetch('/dashboard/recent-adds')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('recentAddsList');
+                if (data.items && data.items.length > 0) {
+                    container.innerHTML = data.items.map(item => `
+                    <div class="recent-add-item">
+                        <span class="item-icon">${getCategoryIcon(item.category)}</span>
+                        <span class="item-label">${item.label}</span>
+                        <span class="item-time">${formatRelativeTime(item.created_at)}</span>
+                    </div>
+                `).join('');
+                } else {
+                    container.innerHTML = '<p class="text-muted">No recent additions</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading recent adds:', error);
+            });
+    }
+
+    function getCategoryIcon(category) {
+        const icons = {
+            'identity': '🪪',
+            'banking': '🏦',
+            'passwords': '🔑',
+            'notes': '📝',
+            'documents': '📄',
+            'emergency': '🚨',
+            'digital_assets': '💻'
+        };
+        return icons[category] || '📦';
+    }
+
+    function formatRelativeTime(timestamp) {
+        const now = new Date();
+        const time = new Date(timestamp);
+        const diff = Math.floor((now - time) / 1000);
+
+        if (diff < 60) return 'Just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        return time.toLocaleDateString();
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+
+{% block title %}Two-Factor Authentication - Private Vault{% endblock %}
+
+{% block content %}
+<style>
+    .twofa-container {
+        max-width: 420px;
+        margin: 60px auto;
+        padding: 40px 32px;
+        background: #0f1a2b;
+        border-radius: 24px;
+        border: 1px solid #253a55;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .twofa-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .twofa-header .icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+    }
+
+    .twofa-header h1 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #eef4ff;
+        margin-bottom: 8px;
+    }
+
+    .twofa-header p {
+        color: #7b96c0;
+        font-size: 14px;
+    }
+
+    .twofa-methods {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin: 24px 0;
+    }
+
+    .method-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background: #0b1422;
+        border: 1px solid #2a3f5c;
+        border-radius: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .method-card:hover {
+        border-color: #4a85ff;
+        background: #111f33;
+    }
+
+    .method-card.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .method-card.disabled:hover {
+        border-color: #2a3f5c;
+        background: #0b1422;
+    }
+
+    .method-card .method-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .method-card .method-icon {
+        font-size: 24px;
+    }
+
+    .method-card .method-name {
+        font-weight: 500;
+        color: #eef4ff;
+    }
+
+    .method-card .method-status {
+        font-size: 12px;
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+
+    .method-card .method-status.active {
+        background: rgba(76, 175, 80, 0.15);
+        color: #4caf50;
+    }
+
+    .method-card .method-status.inactive {
+        background: rgba(255, 152, 0, 0.15);
+        color: #ff9800;
+    }
+
+    .method-card .method-status.coming {
+        background: rgba(100, 100, 100, 0.15);
+        color: #888;
+    }
+
+    .twofa-form {
+        margin-top: 24px;
+    }
+
+    .twofa-form .form-group {
+        margin-bottom: 16px;
+    }
+
+    .twofa-form label {
+        display: block;
+        color: #b3ceff;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 6px;
+    }
+
+    .twofa-form input {
+        width: 100%;
+        padding: 14px 16px;
+        background: #0b1422;
+        border: 1px solid #2a3f5c;
+        border-radius: 12px;
+        color: #f0f5ff;
+        font-size: 16px;
+        text-align: center;
+        letter-spacing: 4px;
+    }
+
+    .twofa-form input:focus {
+        border-color: #4a85ff;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(42, 107, 255, 0.15);
+    }
+
+    .twofa-form .btn-verify {
+        width: 100%;
+        padding: 14px;
+        background: #2a6bff;
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 8px;
+    }
+
+    .twofa-form .btn-verify:hover {
+        background: #3f7aff;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(42, 107, 255, 0.3);
+    }
+
+    .twofa-form .btn-verify:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .error-message {
+        background: rgba(239, 83, 80, 0.12);
+        border: 1px solid rgba(239, 83, 80, 0.3);
+        color: #ef5350;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 14px;
+        margin-bottom: 16px;
+        display: none;
+        text-align: center;
+    }
+
+    .error-message.show {
+        display: block;
+    }
+
+    .security-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 20px;
+        padding: 10px;
+        background: #0b1422;
+        border-radius: 10px;
+        border: 1px solid #1f3147;
+        font-size: 12px;
+        color: #7b96c0;
+    }
+
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 16px;
+        color: #4a85ff;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .back-link:hover {
+        text-decoration: underline;
+    }
+
+    .coming-soon-badge {
+        display: inline-block;
+        background: #1f3147;
+        color: #7b96c0;
+        font-size: 10px;
+        padding: 2px 10px;
+        border-radius: 20px;
+        margin-left: 8px;
+    }
+
+    @media (max-width: 480px) {
+        .twofa-container {
+            margin: 20px auto;
+            padding: 28px 20px;
+        }
+    }
+</style>
+
+<div class="twofa-container">
+    <div class="twofa-header">
+        <div class="icon">🛡️</div>
+        <h1>Two-Factor Authentication</h1>
+        <p>Verify your identity with an additional security method</p>
+    </div>
+
+    <div id="errorMessage" class="error-message"></div>
+
+    <div class="twofa-methods">
+        <div class="method-card active" onclick="selectMethod('authenticator')">
+            <div class="method-info">
+                <span class="method-icon">📱</span>
+                <span class="method-name">Authenticator App</span>
+            </div>
+            <span class="method-status active">Active</span>
+        </div>
+
+        <div class="method-card disabled" onclick="selectMethod('email')">
+            <div class="method-info">
+                <span class="method-icon">✉️</span>
+                <span class="method-name">Email OTP</span>
+            </div>
+            <span class="method-status coming">Coming Soon</span>
+        </div>
+
+        <div class="method-card disabled" onclick="selectMethod('sms')">
+            <div class="method-info">
+                <span class="method-icon">📲</span>
+                <span class="method-name">SMS Verification</span>
+            </div>
+            <span class="method-status coming">Coming Soon</span>
+        </div>
+
+        <div class="method-card disabled" onclick="selectMethod('webauthn')">
+            <div class="method-info">
+                <span class="method-icon">🔑</span>
+                <span class="method-name">Passkey / WebAuthn</span>
+            </div>
+            <span class="method-status coming">Coming Soon</span>
+        </div>
+    </div>
+
+    <div class="twofa-form" id="twofaForm">
+        <div class="form-group">
+            <label for="twofaCode">Enter Verification Code</label>
+            <input type="text" id="twofaCode" placeholder="000000" maxlength="6" inputmode="numeric" autofocus>
+        </div>
+        <button class="btn-verify" id="verifyBtn">Verify & Continue →</button>
+
+        <div style="text-align: center; margin-top: 12px;">
+            <button class="btn-sm btn-secondary" onclick="resendCode()"
+                style="background: transparent; border: 1px solid #2a3f5c; color: #7b96c0; padding: 6px 16px; border-radius: 8px; cursor: pointer;">
+                Resend Code
+            </button>
+        </div>
+    </div>
+
+    <div class="security-badge">
+        <span>🔒</span>
+        <span>Time-based OTP</span>
+        <span>•</span>
+        <span>30-second refresh</span>
+    </div>
+
+    <a href="/auth/login" class="back-link">← Back to login</a>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const codeInput = document.getElementById('twofaCode');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Check if master password was verified
+        if (!sessionStorage.getItem('masterVerified')) {
+            window.location.href = '/auth/login';
+            return;
+        }
+
+        // Auto-focus
+        codeInput.focus();
+
+        // Auto-submit when 6 digits entered
+        codeInput.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '');
+            if (this.value.length === 6) {
+                verifyCode();
+            }
+        });
+
+        // Enter key support
+        codeInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && this.value.length === 6) {
+                verifyCode();
+            }
+        });
+
+        verifyBtn.addEventListener('click', verifyCode);
+
+        function verifyCode() {
+            const code = codeInput.value;
+            if (code.length !== 6) {
+                showError('Please enter a 6-digit verification code');
+                return;
+            }
+
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'Verifying...';
+
+            fetch('/auth/verify-2fa', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code: code })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        sessionStorage.removeItem('masterVerified');
+                        window.location.href = '/dashboard';
+                    } else {
+                        showError(data.error || 'Invalid verification code');
+                        verifyBtn.disabled = false;
+                        verifyBtn.textContent = 'Verify & Continue →';
+                        codeInput.value = '';
+                        codeInput.focus();
+                    }
+                })
+                .catch(error => {
+                    showError('An error occurred. Please try again.');
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = 'Verify & Continue →';
+                    console.error('Error:', error);
+                });
+        }
+
+        function selectMethod(method) {
+            // Only authenticator is active for now
+            if (method !== 'authenticator') {
+                showNotification('This method is coming soon!', 'info');
+            }
+        }
+
+        function resendCode() {
+            fetch('/auth/resend-2fa', {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('New code sent successfully!', 'success');
+                    } else {
+                        showNotification('Error sending new code', 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error sending new code', 'error');
+                    console.error('Error:', error);
+                });
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+            setTimeout(() => {
+                errorMessage.classList.remove('show');
+            }, 5000);
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    });
+</script>
+{% endblock %}

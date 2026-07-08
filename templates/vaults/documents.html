@@ -1,0 +1,520 @@
+{% extends "base.html" %}
+
+{% block title %}Document Vault - Private Vault{% endblock %}
+
+{% block content %}
+<style>
+    .vault-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .vault-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .vault-header h1 {
+        font-size: 28px;
+        color: #eef4ff;
+    }
+
+    .vault-header .subtitle {
+        color: #7b96c0;
+        font-size: 14px;
+    }
+
+    .vault-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: #2a6bff;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #3f7aff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(42, 107, 255, 0.3);
+    }
+
+    .btn-secondary {
+        background: #1f3147;
+        color: #b3ceff;
+    }
+
+    .btn-secondary:hover {
+        background: #2a405a;
+    }
+
+    .search-container {
+        margin-bottom: 24px;
+        position: relative;
+    }
+
+    .search-container input {
+        width: 100%;
+        padding: 12px 16px 12px 44px;
+        background: #0b1422;
+        border: 1px solid #2a3f5c;
+        border-radius: 12px;
+        color: #f0f5ff;
+        font-size: 15px;
+        transition: all 0.2s;
+    }
+
+    .search-container input:focus {
+        border-color: #4a85ff;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(42, 107, 255, 0.1);
+    }
+
+    .search-container .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #5a7a9a;
+        font-size: 18px;
+    }
+
+    .vault-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+    }
+
+    .vault-card {
+        background: #0f1a2b;
+        border: 1px solid #1a2a40;
+        border-radius: 14px;
+        padding: 16px;
+        transition: all 0.2s;
+        position: relative;
+    }
+
+    .vault-card:hover {
+        border-color: #2a3f5c;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .vault-card .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+    }
+
+    .vault-card .card-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #eef4ff;
+    }
+
+    .vault-card .card-badges {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    .vault-card .badge {
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 500;
+    }
+
+    .badge-favorite {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+    }
+
+    .badge-document {
+        background: rgba(42, 107, 255, 0.15);
+        color: #4a85ff;
+    }
+
+    .vault-card .file-icon {
+        font-size: 48px;
+        text-align: center;
+        padding: 16px 0;
+    }
+
+    .vault-card .file-info {
+        font-size: 13px;
+        color: #7b96c0;
+        text-align: center;
+        margin-bottom: 12px;
+    }
+
+    .vault-card .file-info .size {
+        margin-left: 8px;
+        color: #5a7a9a;
+    }
+
+    .vault-card .card-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .btn-sm {
+        padding: 4px 12px;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-sm-primary {
+        background: rgba(42, 107, 255, 0.15);
+        color: #4a85ff;
+    }
+
+    .btn-sm-primary:hover {
+        background: rgba(42, 107, 255, 0.25);
+    }
+
+    .btn-sm-success {
+        background: rgba(76, 175, 80, 0.15);
+        color: #4caf50;
+    }
+
+    .btn-sm-success:hover {
+        background: rgba(76, 175, 80, 0.25);
+    }
+
+    .btn-sm-danger {
+        background: rgba(239, 83, 80, 0.15);
+        color: #ef5350;
+    }
+
+    .btn-sm-danger:hover {
+        background: rgba(239, 83, 80, 0.25);
+    }
+
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 60px 20px;
+        color: #5a7a9a;
+    }
+
+    .empty-state .empty-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+    }
+
+    .empty-state h3 {
+        color: #7b96c0;
+        margin-bottom: 8px;
+    }
+
+    .empty-state p {
+        color: #5a7a9a;
+    }
+
+    .upload-zone {
+        border: 2px dashed #2a3f5c;
+        border-radius: 14px;
+        padding: 40px;
+        text-align: center;
+        margin-bottom: 24px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .upload-zone:hover {
+        border-color: #4a85ff;
+        background: rgba(42, 107, 255, 0.05);
+    }
+
+    .upload-zone .icon {
+        font-size: 48px;
+    }
+
+    .upload-zone h3 {
+        color: #7b96c0;
+        margin-top: 12px;
+    }
+
+    .upload-zone p {
+        color: #5a7a9a;
+        font-size: 14px;
+    }
+
+    @media (max-width: 600px) {
+        .vault-container {
+            padding: 16px;
+        }
+
+        .vault-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .vault-actions {
+            justify-content: stretch;
+        }
+
+        .vault-actions .btn {
+            flex: 1;
+            text-align: center;
+        }
+
+        .vault-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="vault-container">
+    <div class="vault-header">
+        <div>
+            <h1>📄 Document Vault</h1>
+            <div class="subtitle">Store and manage your encrypted documents securely</div>
+        </div>
+        <div class="vault-actions">
+            <button class="btn btn-primary" onclick="uploadFile()">📤 Upload Document</button>
+            <button class="btn btn-secondary" onclick="exportItems()">📥 Export</button>
+        </div>
+    </div>
+
+    <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+        <div class="icon">📁</div>
+        <h3>Drop your files here or click to upload</h3>
+        <p>All files are encrypted before storage. Max size: 50MB</p>
+        <input type="file" id="fileInput" multiple style="display: none;" onchange="uploadFiles(this.files)">
+    </div>
+
+    <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchDocuments" placeholder="Search documents..." oninput="filterItems()">
+    </div>
+
+    <div id="documentsGrid" class="vault-grid">
+        <div class="empty-state">
+            <div class="empty-icon">📄</div>
+            <h3>No documents uploaded</h3>
+            <p>Upload your first encrypted document</p>
+            <button class="btn btn-primary" onclick="uploadFile()" style="margin-top: 16px;">Upload Document</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let documentItems = [];
+
+    document.addEventListener('DOMContentLoaded', function () {
+        loadItems();
+    });
+
+    function loadItems() {
+        fetch('/documents/list')
+            .then(response => response.json())
+            .then(data => {
+                documentItems = data.items || [];
+                renderItems(documentItems);
+            })
+            .catch(error => {
+                console.error('Error loading documents:', error);
+                showNotification('Error loading documents', 'error');
+            });
+    }
+
+    function renderItems(items) {
+        const grid = document.getElementById('documentsGrid');
+
+        if (!items || items.length === 0) {
+            grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">📄</div>
+                <h3>No documents found</h3>
+                <p>Upload your first encrypted document</p>
+                <button class="btn btn-primary" onclick="uploadFile()" style="margin-top: 16px;">Upload Document</button>
+            </div>
+        `;
+            return;
+        }
+
+        grid.innerHTML = items.map(item => {
+            const fileIcon = getFileIcon(item.filename);
+            return `
+            <div class="vault-card" data-id="${item.id}">
+                <div class="card-header">
+                    <div class="card-title">${item.filename}</div>
+                    <div class="card-badges">
+                        ${item.is_favorite ? '<span class="badge badge-favorite">⭐ Favorite</span>' : ''}
+                        <span class="badge badge-document">${item.file_type || 'Document'}</span>
+                    </div>
+                </div>
+                <div class="file-icon">${fileIcon}</div>
+                <div class="file-info">
+                    ${item.filename}
+                    <span class="size">(${formatSize(item.file_size)})</span>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-sm btn-sm-primary" onclick="viewItem(${item.id})">👁️ View</button>
+                    <button class="btn-sm btn-sm-success" onclick="downloadFile(${item.id})">📥 Download</button>
+                    <button class="btn-sm btn-sm-danger" onclick="deleteItem(${item.id})">🗑️</button>
+                </div>
+            </div>
+        `;
+        }).join('');
+    }
+
+    function getFileIcon(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const icons = {
+            'pdf': '📕',
+            'doc': '📘',
+            'docx': '📘',
+            'xls': '📗',
+            'xlsx': '📗',
+            'ppt': '📙',
+            'pptx': '📙',
+            'jpg': '🖼️',
+            'jpeg': '🖼️',
+            'png': '🖼️',
+            'gif': '🖼️',
+            'svg': '🖼️',
+            'zip': '📦',
+            'rar': '📦',
+            '7z': '📦',
+            'txt': '📄',
+            'md': '📄',
+            'json': '📄',
+            'xml': '📄'
+        };
+        return icons[ext] || '📄';
+    }
+
+    function filterItems() {
+        const query = document.getElementById('searchDocuments').value.toLowerCase();
+        const filtered = documentItems.filter(item =>
+            item.filename.toLowerCase().includes(query)
+        );
+        renderItems(filtered);
+    }
+
+    function uploadFile() {
+        document.getElementById('fileInput').click();
+    }
+
+    function uploadFiles(files) {
+        if (!files || files.length === 0) return;
+
+        const formData = new FormData();
+        for (let file of files) {
+            formData.append('files', file);
+        }
+
+        showNotification('Uploading files...', 'info');
+
+        fetch('/documents/upload', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Files uploaded successfully!', 'success');
+                    loadItems();
+                } else {
+                    showNotification('Error uploading files: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error uploading files', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    function viewItem(id) {
+        window.location.href = `/documents/view/${id}`;
+    }
+
+    function downloadFile(id) {
+        window.location.href = `/documents/download/${id}`;
+    }
+
+    function deleteItem(id) {
+        if (confirm('Are you sure you want to delete this document?')) {
+            fetch(`/documents/delete/${id}`, {
+                method: 'DELETE'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Document deleted successfully', 'success');
+                        loadItems();
+                    } else {
+                        showNotification('Error deleting document', 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error deleting document', 'error');
+                    console.error('Error:', error);
+                });
+        }
+    }
+
+    function exportItems() {
+        fetch('/documents/export')
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `documents_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                showNotification('Documents exported successfully!', 'success');
+            })
+            .catch(error => {
+                showNotification('Error exporting documents', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    function formatSize(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 4000);
+    }
+</script>
+{% endblock %}

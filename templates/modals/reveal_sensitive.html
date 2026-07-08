@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}Reveal Sensitive Information - Private Vault{% endblock %}
+
+{% block content %}
+<style>
+    .reveal-container {
+        max-width: 480px;
+        margin: 80px auto;
+        padding: 40px 32px;
+        background: #0f1a2b;
+        border-radius: 24px;
+        border: 1px solid #253a55;
+        text-align: center;
+    }
+
+    .reveal-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+    }
+
+    .reveal-container h2 {
+        color: #ffc107;
+        font-size: 24px;
+        margin-bottom: 8px;
+    }
+
+    .reveal-container .subtitle {
+        color: #7b96c0;
+        font-size: 14px;
+        margin-bottom: 24px;
+    }
+
+    .security-box {
+        background: rgba(255, 193, 7, 0.08);
+        border: 1px solid rgba(255, 193, 7, 0.2);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        text-align: left;
+    }
+
+    .security-box .security-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 0;
+        color: #eef4ff;
+        font-size: 14px;
+    }
+
+    .security-box .security-item .icon {
+        color: #ffc107;
+    }
+
+    .item-details {
+        background: #0b1422;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        text-align: left;
+    }
+
+    .item-details .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 14px;
+    }
+
+    .item-details .detail-row .label {
+        color: #7b96c0;
+    }
+
+    .item-details .detail-row .value {
+        color: #eef4ff;
+    }
+
+    .item-details .detail-row .value.masked {
+        color: #7b96c0;
+        letter-spacing: 2px;
+    }
+
+    .reveal-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .reveal-options .option-btn {
+        padding: 14px;
+        border: 1px solid #2a3f5c;
+        border-radius: 12px;
+        background: #0b1422;
+        color: #eef4ff;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .reveal-options .option-btn:hover {
+        border-color: #4a85ff;
+        background: #111f33;
+    }
+
+    .reveal-options .option-btn .icon {
+        font-size: 20px;
+    }
+
+    .reveal-options .option-btn .time {
+        font-size: 12px;
+        color: #7b96c0;
+    }
+
+    .confirm-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+    }
+
+    .btn {
+        padding: 12px 32px;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-secondary {
+        background: #1f3147;
+        color: #b3ceff;
+    }
+
+    .btn-secondary:hover {
+        background: #2a405a;
+    }
+
+    .btn-warning {
+        background: #ff9800;
+        color: #1a1a2e;
+    }
+
+    .btn-warning:hover {
+        background: #f57c00;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(255, 152, 0, 0.3);
+    }
+
+    .btn-danger {
+        background: #b13e4b;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #c94f5d;
+    }
+
+    .reveal-container .back-link {
+        display: block;
+        margin-top: 16px;
+        color: #4a85ff;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .reveal-container .back-link:hover {
+        text-decoration: underline;
+    }
+
+    .timer-display {
+        background: #0b1422;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 14px;
+        color: #7b96c0;
+        display: inline-block;
+        margin-bottom: 16px;
+    }
+
+    .timer-display .time {
+        color: #ffc107;
+        font-weight: 600;
+    }
+
+    @media (max-width: 480px) {
+        .reveal-container {
+            margin: 40px auto;
+            padding: 28px 20px;
+        }
+
+        .confirm-actions {
+            flex-direction: column;
+        }
+
+        .confirm-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="reveal-container"
+     data-item-id="{{ item.id if item else '' }}"
+     data-item-value="{{ item.value if item else '' }}">
+    <div class="reveal-icon">👁️</div>
+    <h2>Reveal Sensitive Information</h2>
+    <p class="subtitle">This action will temporarily display sensitive data</p>
+
+    <div class="security-box">
+        <div class="security-item">
+            <span class="icon">🔒</span>
+            <span>This action will be logged in the audit trail</span>
+        </div>
+        <div class="security-item">
+            <span class="icon">⏱️</span>
+            <span>Value will auto-hide after {{ timeout_seconds or 10 }} seconds</span>
+        </div>
+        <div class="security-item">
+            <span class="icon">🛡️</span>
+            <span>Your session is encrypted and secure</span>
+        </div>
+    </div>
+
+    <div class="item-details">
+        <div class="detail-row">
+            <span class="label">Category</span>
+            <span class="value">{{ item.category|title if item else '-' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Label</span>
+            <span class="value">{{ item.label if item else '-' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Value</span>
+            <span class="value masked" id="maskedValue">
+                {% if item and item.value %}
+                {{ '•' * (item.value|length) }}
+                {% else %}
+                -
+                {% endif %}
+            </span>
+        </div>
+        <div class="detail-row" id="revealedRow" style="display: none;">
+            <span class="label">Revealed Value</span>
+            <span class="value" id="revealedValue" style="color: #ffc107; font-weight: 600;"></span>
+        </div>
+    </div>
+
+    <div class="reveal-options" id="revealOptions">
+        <button class="option-btn" onclick="revealValue(10)">
+            <span class="icon">👁️</span>
+            Reveal for 10 seconds
+            <span class="time">(default)</span>
+        </button>
+        <button class="option-btn" onclick="revealValue(30)">
+            <span class="icon">👁️</span>
+            Reveal for 30 seconds
+        </button>
+        <button class="option-btn" onclick="revealValue(60)">
+            <span class="icon">👁️</span>
+            Reveal for 1 minute
+        </button>
+    </div>
+
+    <div id="timerDisplay" class="timer-display" style="display: none;">
+        Auto-hide in <span class="time" id="timerCountdown">10</span> seconds
+    </div>
+
+    <div class="confirm-actions">
+        <button class="btn btn-secondary"
+            data-url="{{ return_url or '/dashboard' }}"
+            onclick="window.location.href=this.dataset.url">Cancel</button>
+        <button class="btn btn-warning" id="revealBtn" onclick="revealValue(10)">Reveal Now</button>
+    </div>
+
+    <a href="{{ return_url or '/dashboard' }}" class="back-link">← Go back</a>
+</div>
+
+<script>
+    const container = document.querySelector('.reveal-container');
+    const itemId = container.dataset.itemId;
+    const itemValue = container.dataset.itemValue;
+
+    let revealTimer = null;
+    let countdownInterval = null;
+    let isRevealed = false;
+
+    function revealValue(seconds) {
+        if (!itemValue) {
+            showNotification('No value to reveal', 'error');
+            return;
+        }
+
+        // Log reveal action
+        logReveal(itemId);
+
+        // Show revealed value
+        const maskedValue = document.getElementById('maskedValue');
+        const revealedRow = document.getElementById('revealedRow');
+        const revealedValue = document.getElementById('revealedValue');
+        const revealOptions = document.getElementById('revealOptions');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerCountdown = document.getElementById('timerCountdown');
+        const revealBtn = document.getElementById('revealBtn');
+
+        maskedValue.style.display = 'none';
+        revealedRow.style.display = 'block';
+        revealedValue.textContent = itemValue;
+        revealOptions.style.display = 'none';
+        timerDisplay.style.display = 'block';
+        revealBtn.textContent = 'Hide Now';
+        revealBtn.onclick = hideValue;
+        isRevealed = true;
+
+        // Start countdown
+        let remaining = seconds;
+        timerCountdown.textContent = remaining;
+
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+        }
+
+        countdownInterval = setInterval(() => {
+            remaining--;
+            timerCountdown.textContent = remaining;
+            if (remaining <= 0) {
+                clearInterval(countdownInterval);
+                hideValue();
+            }
+        }, 1000);
+
+        // Clear previous timer
+        if (revealTimer) {
+            clearTimeout(revealTimer);
+        }
+
+        // Auto-hide after timeout
+        revealTimer = setTimeout(() => {
+            hideValue();
+        }, seconds * 1000);
+
+        showNotification('Value revealed! It will auto-hide in ' + seconds + ' seconds', 'warning');
+    }
+
+    function hideValue() {
+        if (!isRevealed) return;
+
+        const maskedValue = document.getElementById('maskedValue');
+        const revealedRow = document.getElementById('revealedRow');
+        const revealOptions = document.getElementById('revealOptions');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const revealBtn = document.getElementById('revealBtn');
+
+        maskedValue.style.display = 'inline';
+        revealedRow.style.display = 'none';
+        revealOptions.style.display = 'flex';
+        timerDisplay.style.display = 'none';
+        revealBtn.textContent = 'Reveal Now';
+        revealBtn.onclick = function () { revealValue(10); };
+        isRevealed = false;
+
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+
+        if (revealTimer) {
+            clearTimeout(revealTimer);
+            revealTimer = null;
+        }
+
+        showNotification('Value hidden', 'info');
+    }
+
+    function logReveal(itemId) {
+        fetch(`/activity/log-reveal/${itemId}`, {
+            method: 'POST'
+        }).catch(error => console.error('Error logging reveal:', error));
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Handle escape key to hide
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isRevealed) {
+            hideValue();
+        }
+    });
+</script>
+{% endblock %}

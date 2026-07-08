@@ -1,0 +1,267 @@
+<nav class="sidebar">
+    <div class="sidebar-section">
+        <div class="sidebar-title">Main</div>
+        <ul class="sidebar-nav">
+            <li class="nav-item {{ 'active' if active_page == 'dashboard' else '' }}">
+                <a href="/dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item {{ 'active' if active_page == 'identity' else '' }}">
+                <a href="/identity">
+                    <span class="nav-icon">🪪</span>
+                    <span class="nav-label">Identity</span>
+                </a>
+            </li>
+            <li class="nav-item {{ 'active' if active_page == 'banking' else '' }}">
+                <a href="/banking">
+                    <span class="nav-icon">🏦</span>
+                    <span class="nav-label">Banking</span>
+                </a>
+            </li>
+            <li class="nav-item {{ 'active' if active_page == 'passwords' else '' }}">
+                <a href="/passwords">
+                    <span class="nav-icon">🔑</span>
+                    <span class="nav-label">Passwords</span>
+                </a>
+            </li>
+            <li class="nav-item {{ 'active' if active_page == 'notes' else '' }}">
+                <a href="/notes">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-label">Notes</span>
+                </a>
+            </li>
+            <li class="nav-item {{ 'active' if active_page == 'documents' else '' }}">
+                <a href="/documents">
+                    <span class="nav-icon">📄</span>
+                    <span class="nav-label">Documents</span>
+                </a>
+            </li>
+            <li class="nav-item {{ 'active' if active_page == 'emergency' else '' }}">
+                <a href="/emergency">
+                    <span class="nav-icon">🚨</span>
+                    <span class="nav-label">Emergency</span>
+                </a>
+            </li>
+            <li class="nav-item {{ 'active' if active_page == 'digital_assets' else '' }}">
+                <a href="/digital-assets">
+                    <span class="nav-icon">💻</span>
+                    <span class="nav-label">Digital Assets</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-title">Management</div>
+        <ul class="sidebar-nav">
+            <li class="nav-item {{ 'active' if active_page == 'backup' else '' }}">
+                <a href="/backup">
+                    <span class="nav-icon">💾</span>
+                    <span class="nav-label">Backup Center</span>
+                </a>
+            </li>
+            <li class="nav-item {{ 'active' if active_page == 'activity' else '' }}">
+                <a href="/activity">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-label">Activity Logs</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-title">Settings</div>
+        <ul class="sidebar-nav">
+            <li class="nav-item {{ 'active' if active_page == 'security' else '' }}">
+                <a href="/security">
+                    <span class="nav-icon">🔒</span>
+                    <span class="nav-label">Security</span>
+                </a>
+            </li>
+            <li class="nav-item {{ 'active' if active_page == 'settings' else '' }}">
+                <a href="/settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">General</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="sidebar-footer">
+        <div class="sidebar-version">v1.0.0</div>
+        <div class="sidebar-status">
+            <span class="status-dot online"></span>
+            <span>Secure</span>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .sidebar {
+        width: 240px;
+        min-height: calc(100vh - 64px);
+        background: #0a1220;
+        border-right: 1px solid #1a2a40;
+        padding: 20px 0;
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 64px;
+        height: calc(100vh - 64px);
+        overflow-y: auto;
+    }
+
+    .sidebar-section {
+        margin-bottom: 8px;
+    }
+
+    .sidebar-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: #5a7a9a;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 8px 20px 4px;
+    }
+
+    .sidebar-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .nav-item {
+        margin: 2px 8px;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+
+    .nav-item a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+        color: #7b96c0;
+        text-decoration: none;
+        font-size: 14px;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+
+    .nav-item a:hover {
+        background: #1a2a40;
+        color: #eef4ff;
+    }
+
+    .nav-item.active a {
+        background: #1a2a40;
+        color: #4a85ff;
+    }
+
+    .nav-item.active .nav-icon {
+        color: #4a85ff;
+    }
+
+    .nav-icon {
+        font-size: 18px;
+        width: 24px;
+        text-align: center;
+    }
+
+    .nav-label {
+        flex: 1;
+    }
+
+    .sidebar-footer {
+        margin-top: auto;
+        padding: 16px 20px;
+        border-top: 1px solid #1a2a40;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .sidebar-version {
+        font-size: 12px;
+        color: #5a7a9a;
+    }
+
+    .sidebar-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #4caf50;
+    }
+
+    .sidebar-status .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .sidebar-status .status-dot.online {
+        background: #4caf50;
+    }
+
+    @media (max-width: 768px) {
+        .sidebar {
+            position: fixed;
+            top: 64px;
+            left: -280px;
+            width: 280px;
+            height: calc(100vh - 64px);
+            z-index: 999;
+            transition: left 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .sidebar.mobile-open {
+            left: 0;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 64px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 64px);
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Create overlay for mobile
+        const overlay = document.createElement('div');
+        overlay.className = 'sidebar-overlay';
+        document.body.appendChild(overlay);
+
+        const sidebar = document.querySelector('.sidebar');
+        const menuToggle = document.getElementById('menuToggle');
+
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', function () {
+                sidebar.classList.toggle('mobile-open');
+                overlay.classList.toggle('show');
+                document.body.style.overflow = sidebar.classList.contains('mobile-open') ? 'hidden' : '';
+            });
+
+            overlay.addEventListener('click', function () {
+                sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('show');
+                document.body.style.overflow = '';
+            });
+        }
+    });
+</script>

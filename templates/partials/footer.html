@@ -1,0 +1,225 @@
+<footer class="vault-footer">
+    <div class="footer-content">
+        <div class="footer-left">
+            <span class="footer-logo">🔐 Private Vault</span>
+            <span class="footer-divider">|</span>
+            <span class="footer-version">v1.0.0</span>
+            <span class="footer-divider">|</span>
+            <span class="footer-status">
+                <span class="status-dot online"></span>
+                Secure Connection
+            </span>
+        </div>
+
+        <div class="footer-center">
+            <span class="footer-time" id="footerTime"></span>
+            <span class="footer-divider">|</span>
+            <span class="footer-session" id="footerSession">
+                Session: <span id="sessionTime">00:00</span>
+            </span>
+        </div>
+
+        <div class="footer-right">
+            <a href="#" onclick="showHelp()" class="footer-link">Help</a>
+            <span class="footer-divider">|</span>
+            <a href="/settings/security" class="footer-link">Security</a>
+            <span class="footer-divider">|</span>
+            <a href="/auth/logout" class="footer-link logout-link">Logout</a>
+        </div>
+    </div>
+</footer>
+
+<style>
+    .vault-footer {
+        background: #0a1220;
+        border-top: 1px solid #1a2a40;
+        padding: 12px 24px;
+        position: fixed;
+        bottom: 0;
+        left: 240px;
+        right: 0;
+        z-index: 50;
+    }
+
+    .footer-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        color: #5a7a9a;
+    }
+
+    .footer-left,
+    .footer-center,
+    .footer-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .footer-logo {
+        font-weight: 500;
+        color: #7b96c0;
+    }
+
+    .footer-divider {
+        color: #1a2a40;
+    }
+
+    .footer-version {
+        color: #5a7a9a;
+    }
+
+    .footer-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #4caf50;
+    }
+
+    .footer-status .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #4caf50;
+        display: inline-block;
+        animation: pulse-dot 2s infinite;
+    }
+
+    .footer-time {
+        color: #7b96c0;
+    }
+
+    .footer-session {
+        color: #7b96c0;
+    }
+
+    .footer-session #sessionTime {
+        color: #b3ceff;
+        font-weight: 500;
+    }
+
+    .footer-link {
+        color: #7b96c0;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .footer-link:hover {
+        color: #b3ceff;
+    }
+
+    .footer-link.logout-link {
+        color: #ef5350;
+    }
+
+    .footer-link.logout-link:hover {
+        color: #ff6b6b;
+    }
+
+    @keyframes pulse-dot {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .vault-footer {
+            left: 0;
+            padding: 10px 16px;
+        }
+
+        .footer-content {
+            flex-direction: column;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .footer-left,
+        .footer-center,
+        .footer-right {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .footer-divider {
+            display: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .vault-footer {
+            padding: 8px 12px;
+            font-size: 11px;
+        }
+
+        .footer-logo {
+            font-size: 12px;
+        }
+
+        .footer-status {
+            font-size: 11px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const timeEl = document.getElementById('footerTime');
+            if (timeEl) {
+                timeEl.textContent = timeStr;
+            }
+        }
+
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // Session timer
+        let sessionStart = Date.now();
+        function updateSession() {
+            const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+            const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
+            const seconds = String(elapsed % 60).padStart(2, '0');
+            const sessionEl = document.getElementById('sessionTime');
+            if (sessionEl) {
+                sessionEl.textContent = `${minutes}:${seconds}`;
+            }
+        }
+
+        updateSession();
+        setInterval(updateSession, 1000);
+    });
+
+    function showHelp() {
+        alert(`🔐 Private Vault Help
+
+Quick Tips:
+• Use the sidebar to navigate between vaults
+• Search across all vaults using the search bar
+• Click the copy button to copy values
+• Sensitive values are hidden by default
+• Click the eye icon to reveal sensitive values
+
+Security:
+• All data is encrypted at rest
+• Session timeout after 15 minutes of inactivity
+• All actions are logged for audit
+
+For more help, visit the documentation.`);
+    }
+</script>

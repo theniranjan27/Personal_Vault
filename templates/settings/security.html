@@ -1,0 +1,758 @@
+{% extends "base.html" %}
+
+{% block title %}Security Settings - Private Vault{% endblock %}
+
+{% block content %}
+<style>
+    .settings-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .settings-header {
+        margin-bottom: 32px;
+    }
+
+    .settings-header h1 {
+        font-size: 28px;
+        color: #eef4ff;
+        margin-bottom: 8px;
+    }
+
+    .settings-header p {
+        color: #7b96c0;
+        font-size: 15px;
+    }
+
+    .settings-section {
+        background: #0f1a2b;
+        border: 1px solid #1a2a40;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .settings-section .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .settings-section .section-header h2 {
+        font-size: 18px;
+        color: #eef4ff;
+    }
+
+    .settings-section .section-header .badge {
+        font-size: 11px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+
+    .badge-active {
+        background: rgba(76, 175, 80, 0.15);
+        color: #4caf50;
+    }
+
+    .badge-inactive {
+        background: rgba(255, 152, 0, 0.15);
+        color: #ff9800;
+    }
+
+    .badge-coming {
+        background: rgba(100, 100, 100, 0.15);
+        color: #888;
+    }
+
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #1a2a40;
+    }
+
+    .setting-item:last-child {
+        border-bottom: none;
+    }
+
+    .setting-item .setting-info {
+        flex: 1;
+    }
+
+    .setting-item .setting-info .setting-label {
+        color: #eef4ff;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .setting-item .setting-info .setting-description {
+        color: #7b96c0;
+        font-size: 13px;
+        margin-top: 2px;
+    }
+
+    .setting-item .setting-control {
+        margin-left: 16px;
+    }
+
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 26px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #1f3147;
+        transition: .3s;
+        border-radius: 26px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background: #5a7a9a;
+        transition: .3s;
+        border-radius: 50%;
+    }
+
+    .switch input:checked+.slider {
+        background: #2a6bff;
+    }
+
+    .switch input:checked+.slider:before {
+        transform: translateX(22px);
+        background: white;
+    }
+
+    .switch.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .switch.disabled .slider {
+        cursor: not-allowed;
+    }
+
+    .btn-sm {
+        padding: 6px 16px;
+        border: none;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary-sm {
+        background: #2a6bff;
+        color: white;
+    }
+
+    .btn-primary-sm:hover {
+        background: #3f7aff;
+    }
+
+    .btn-secondary-sm {
+        background: #1f3147;
+        color: #b3ceff;
+    }
+
+    .btn-secondary-sm:hover {
+        background: #2a405a;
+    }
+
+    .btn-danger-sm {
+        background: #b13e4b;
+        color: white;
+    }
+
+    .btn-danger-sm:hover {
+        background: #c94f5d;
+    }
+
+    .input-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .input-group input {
+        padding: 8px 12px;
+        background: #0b1422;
+        border: 1px solid #2a3f5c;
+        border-radius: 8px;
+        color: #f0f5ff;
+        font-size: 14px;
+        flex: 1;
+    }
+
+    .input-group input:focus {
+        border-color: #4a85ff;
+        outline: none;
+    }
+
+    .method-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .method-card {
+        background: #0b1422;
+        border: 1px solid #1a2a40;
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.2s;
+    }
+
+    .method-card:hover {
+        border-color: #2a3f5c;
+    }
+
+    .method-card .method-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .method-card .method-icon {
+        font-size: 24px;
+    }
+
+    .method-card .method-name {
+        color: #eef4ff;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .method-card .method-status {
+        font-size: 11px;
+        padding: 2px 10px;
+        border-radius: 12px;
+        margin-left: auto;
+    }
+
+    .method-card .method-description {
+        color: #7b96c0;
+        font-size: 13px;
+    }
+
+    @media (max-width: 600px) {
+        .settings-container {
+            padding: 16px;
+        }
+
+        .setting-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .setting-item .setting-control {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .method-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .input-group {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .input-group input {
+            width: 100%;
+        }
+
+        .input-group button {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="settings-container">
+    <div class="settings-header">
+        <h1>🔒 Security Settings</h1>
+        <p>Manage your security preferences and authentication methods</p>
+    </div>
+
+    <!-- Authentication Methods -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>Authentication Methods</h2>
+            <span class="badge badge-active">Active</span>
+        </div>
+
+        <div class="method-grid">
+            <div class="method-card">
+                <div class="method-header">
+                    <span class="method-icon">🔑</span>
+                    <span class="method-name">Master Password</span>
+                    <span class="method-status badge-active">Active</span>
+                </div>
+                <div class="method-description">Strong password with letters, numbers, and symbols</div>
+                <div style="margin-top: 10px;">
+                    <button class="btn-sm btn-secondary-sm" onclick="changePassword()">Change Password</button>
+                </div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-header">
+                    <span class="method-icon">🔢</span>
+                    <span class="method-name">PIN Verification</span>
+                    <span class="method-status badge-active">Active</span>
+                </div>
+                <div class="method-description">6-digit PIN for second authentication layer</div>
+                <div style="margin-top: 10px;">
+                    <button class="btn-sm btn-secondary-sm" onclick="changePin()">Change PIN</button>
+                </div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-header">
+                    <span class="method-icon">✉️</span>
+                    <span class="method-name">Email OTP</span>
+                    <span class="method-status badge-coming">Coming Soon</span>
+                </div>
+                <div class="method-description">One-time password sent to registered email</div>
+                <div style="margin-top: 10px;">
+                    <label class="switch disabled">
+                        <input type="checkbox" disabled>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-header">
+                    <span class="method-icon">📱</span>
+                    <span class="method-name">Authenticator App OTP</span>
+                    <span class="method-status badge-coming">Coming Soon</span>
+                </div>
+                <div class="method-description">TOTP from Google Authenticator or similar</div>
+                <div style="margin-top: 10px;">
+                    <label class="switch disabled">
+                        <input type="checkbox" disabled>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-header">
+                    <span class="method-icon">🔐</span>
+                    <span class="method-name">Passkeys / WebAuthn</span>
+                    <span class="method-status badge-coming">Coming Soon</span>
+                </div>
+                <div class="method-description">Biometric or hardware-based authentication</div>
+                <div style="margin-top: 10px;">
+                    <label class="switch disabled">
+                        <input type="checkbox" disabled>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="method-card">
+                <div class="method-header">
+                    <span class="method-icon">💳</span>
+                    <span class="method-name">Hardware Security Key</span>
+                    <span class="method-status badge-coming">Coming Soon</span>
+                </div>
+                <div class="method-description">YubiKey or similar hardware security key</div>
+                <div style="margin-top: 10px;">
+                    <label class="switch disabled">
+                        <input type="checkbox" disabled>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Settings -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>Session Management</h2>
+            <span class="badge badge-active">Active</span>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Session Timeout</div>
+                <div class="setting-description">Auto-logout after inactivity</div>
+            </div>
+            <div class="setting-control">
+                <select id="sessionTimeout" class="input-select" onchange="updateSessionTimeout()">
+                    <option value="5">5 minutes</option>
+                    <option value="10">10 minutes</option>
+                    <option value="15" selected>15 minutes</option>
+                    <option value="30">30 minutes</option>
+                    <option value="60">60 minutes</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Login Attempts Limit</div>
+                <div class="setting-description">Maximum failed login attempts before lockout</div>
+            </div>
+            <div class="setting-control">
+                <select id="loginAttempts" onchange="updateLoginAttempts()">
+                    <option value="3">3 attempts</option>
+                    <option value="5" selected>5 attempts</option>
+                    <option value="10">10 attempts</option>
+                    <option value="0">Unlimited</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Lockout Duration</div>
+                <div class="setting-description">Account lockout duration after failed attempts</div>
+            </div>
+            <div class="setting-control">
+                <select id="lockoutDuration" onchange="updateLockoutDuration()">
+                    <option value="5">5 minutes</option>
+                    <option value="15">15 minutes</option>
+                    <option value="30" selected>30 minutes</option>
+                    <option value="60">60 minutes</option>
+                    <option value="1440">24 hours</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trusted Devices -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>Trusted Devices</h2>
+            <span class="badge badge-active">Active</span>
+        </div>
+
+        <div id="trustedDevicesList">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Current Device</div>
+                    <div class="setting-description">{{ user_agent or 'Chrome on Windows' }}</div>
+                </div>
+                <div class="setting-control">
+                    <span class="badge badge-active">Current</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 12px;">
+            <button class="btn-sm btn-secondary-sm" onclick="addTrustedDevice()">+ Add Trusted Device</button>
+        </div>
+    </div>
+
+    <!-- Recovery Options -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>Recovery Options</h2>
+            <span class="badge badge-coming">Coming Soon</span>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Recovery Codes</div>
+                <div class="setting-description">Generate one-time recovery codes for account recovery</div>
+            </div>
+            <div class="setting-control">
+                <button class="btn-sm btn-secondary-sm" disabled>Generate Codes</button>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Emergency Lock Mode</div>
+                <div class="setting-description">Lock account in case of emergency or suspicious activity</div>
+            </div>
+            <div class="setting-control">
+                <label class="switch disabled">
+                    <input type="checkbox" disabled>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Security -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>Advanced Security</h2>
+            <span class="badge badge-coming">Coming Soon</span>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">IP Restriction</div>
+                <div class="setting-description">Restrict login to specific IP addresses</div>
+            </div>
+            <div class="setting-control">
+                <label class="switch disabled">
+                    <input type="checkbox" disabled>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Device Login Alerts</div>
+                <div class="setting-description">Get notified when a new device logs in</div>
+            </div>
+            <div class="setting-control">
+                <label class="switch disabled">
+                    <input type="checkbox" disabled>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="settings-section" style="border-color: rgba(239,83,80,0.3);">
+        <div class="section-header">
+            <h2 style="color: #ef5350;">⚠️ Danger Zone</h2>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label" style="color: #ef5350;">Delete All Data</div>
+                <div class="setting-description">Permanently delete all vault data and files</div>
+            </div>
+            <div class="setting-control">
+                <button class="btn-sm btn-danger-sm" onclick="deleteAllData()">Delete All Data</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Password Change
+    function changePassword() {
+        const currentPassword = prompt('Enter current master password:');
+        if (!currentPassword) return;
+
+        const newPassword = prompt('Enter new master password (min 8 chars, with uppercase, lowercase, number, special):');
+        if (!newPassword) return;
+
+        const confirmPassword = prompt('Confirm new master password:');
+        if (newPassword !== confirmPassword) {
+            showNotification('Passwords do not match', 'error');
+            return;
+        }
+
+        fetch('/settings/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_password: newPassword
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Password changed successfully!', 'success');
+                } else {
+                    showNotification('Error: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error changing password', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    // PIN Change
+    function changePin() {
+        const currentPin = prompt('Enter current PIN:');
+        if (!currentPin) return;
+
+        const newPin = prompt('Enter new 6-digit PIN:');
+        if (!newPin || newPin.length !== 6 || !/^\d+$/.test(newPin)) {
+            showNotification('PIN must be exactly 6 digits', 'error');
+            return;
+        }
+
+        const confirmPin = prompt('Confirm new PIN:');
+        if (newPin !== confirmPin) {
+            showNotification('PINs do not match', 'error');
+            return;
+        }
+
+        fetch('/settings/change-pin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                current_pin: currentPin,
+                new_pin: newPin
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('PIN changed successfully!', 'success');
+                } else {
+                    showNotification('Error: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error changing PIN', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    // Session Timeout
+    function updateSessionTimeout() {
+        const value = document.getElementById('sessionTimeout').value;
+        fetch('/settings/update-session-timeout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ timeout: parseInt(value) })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Session timeout updated!', 'success');
+                }
+            })
+            .catch(error => {
+                showNotification('Error updating session timeout', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    // Login Attempts
+    function updateLoginAttempts() {
+        const value = document.getElementById('loginAttempts').value;
+        fetch('/settings/update-login-attempts', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ attempts: parseInt(value) })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Login attempts limit updated!', 'success');
+                }
+            })
+            .catch(error => {
+                showNotification('Error updating login attempts', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    // Lockout Duration
+    function updateLockoutDuration() {
+        const value = document.getElementById('lockoutDuration').value;
+        fetch('/settings/update-lockout-duration', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ duration: parseInt(value) })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Lockout duration updated!', 'success');
+                }
+            })
+            .catch(error => {
+                showNotification('Error updating lockout duration', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    // Trusted Devices
+    function addTrustedDevice() {
+        const deviceName = prompt('Enter device name:');
+        if (!deviceName) return;
+
+        // Simulate adding device
+        showNotification('Device added to trusted list!', 'success');
+    }
+
+    // Delete All Data
+    function deleteAllData() {
+        if (!confirm('⚠️ WARNING: This will permanently delete ALL your vault data including all items, files, and settings. This action cannot be undone!')) {
+            return;
+        }
+
+        if (!confirm('Are you absolutely sure? Type "DELETE" to confirm.')) {
+            const confirmText = prompt('Type "DELETE" to confirm:');
+            if (confirmText !== 'DELETE') {
+                showNotification('Deletion cancelled', 'warning');
+                return;
+            }
+        }
+
+        fetch('/settings/delete-all-data', {
+            method: 'POST'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('All data deleted. Logging out...', 'warning');
+                    setTimeout(() => {
+                        window.location.href = '/auth/logout';
+                    }, 2000);
+                } else {
+                    showNotification('Error: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error deleting data', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 4000);
+    }
+</script>
+{% endblock %}

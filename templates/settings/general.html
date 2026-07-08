@@ -1,0 +1,675 @@
+{% extends "base.html" %}
+
+{% block title %}General Settings - Private Vault{% endblock %}
+
+{% block content %}
+<style>
+    .settings-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .settings-header {
+        margin-bottom: 32px;
+    }
+
+    .settings-header h1 {
+        font-size: 28px;
+        color: #eef4ff;
+        margin-bottom: 8px;
+    }
+
+    .settings-header p {
+        color: #7b96c0;
+        font-size: 15px;
+    }
+
+    .settings-section {
+        background: #0f1a2b;
+        border: 1px solid #1a2a40;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .settings-section .section-header {
+        margin-bottom: 16px;
+    }
+
+    .settings-section .section-header h2 {
+        font-size: 18px;
+        color: #eef4ff;
+    }
+
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #1a2a40;
+    }
+
+    .setting-item:last-child {
+        border-bottom: none;
+    }
+
+    .setting-item .setting-info {
+        flex: 1;
+    }
+
+    .setting-item .setting-info .setting-label {
+        color: #eef4ff;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .setting-item .setting-info .setting-description {
+        color: #7b96c0;
+        font-size: 13px;
+        margin-top: 2px;
+    }
+
+    .setting-item .setting-control {
+        margin-left: 16px;
+    }
+
+    .input-select {
+        padding: 8px 12px;
+        background: #0b1422;
+        border: 1px solid #2a3f5c;
+        border-radius: 8px;
+        color: #f0f5ff;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .input-select:focus {
+        border-color: #4a85ff;
+        outline: none;
+    }
+
+    .input-text {
+        padding: 8px 12px;
+        background: #0b1422;
+        border: 1px solid #2a3f5c;
+        border-radius: 8px;
+        color: #f0f5ff;
+        font-size: 14px;
+        width: 200px;
+    }
+
+    .input-text:focus {
+        border-color: #4a85ff;
+        outline: none;
+    }
+
+    .btn-sm {
+        padding: 6px 16px;
+        border: none;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary-sm {
+        background: #2a6bff;
+        color: white;
+    }
+
+    .btn-primary-sm:hover {
+        background: #3f7aff;
+    }
+
+    .btn-secondary-sm {
+        background: #1f3147;
+        color: #b3ceff;
+    }
+
+    .btn-secondary-sm:hover {
+        background: #2a405a;
+    }
+
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 26px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #1f3147;
+        transition: .3s;
+        border-radius: 26px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background: #5a7a9a;
+        transition: .3s;
+        border-radius: 50%;
+    }
+
+    .switch input:checked+.slider {
+        background: #2a6bff;
+    }
+
+    .switch input:checked+.slider:before {
+        transform: translateX(22px);
+        background: white;
+    }
+
+    .avatar-upload {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .avatar-preview {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: #2a6bff;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 600px) {
+        .settings-container {
+            padding: 16px;
+        }
+
+        .setting-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .setting-item .setting-control {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .input-text {
+            width: 100%;
+        }
+
+        .input-select {
+            width: 100%;
+        }
+
+        .avatar-upload {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+<div class="settings-container">
+    <div class="settings-header">
+        <h1>⚙️ General Settings</h1>
+        <p>Manage your profile, preferences, and application settings</p>
+    </div>
+
+    <!-- Profile Settings -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>👤 Profile</h2>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Full Name</div>
+                <div class="setting-description">{{ user.full_name if user else 'Administrator' }}</div>
+            </div>
+            <div class="setting-control">
+                <button class="btn-sm btn-secondary-sm" onclick="editProfile('name')">Edit</button>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Username</div>
+                <div class="setting-description">{{ user.username if user else 'admin' }}</div>
+            </div>
+            <div class="setting-control">
+                <button class="btn-sm btn-secondary-sm" onclick="editProfile('username')">Edit</button>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Email</div>
+                <div class="setting-description">{{ user.email if user else 'admin@example.com' }}</div>
+            </div>
+            <div class="setting-control">
+                <button class="btn-sm btn-secondary-sm" onclick="editProfile('email')">Edit</button>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Avatar</div>
+                <div class="setting-description">Profile picture</div>
+            </div>
+            <div class="setting-control">
+                <div class="avatar-upload">
+                    <div class="avatar-preview">{{ (user.full_name[0] if user and user.full_name else 'A')|upper }}
+                    </div>
+                    <button class="btn-sm btn-secondary-sm" onclick="uploadAvatar()">Upload</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preferences -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>🎨 Preferences</h2>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Theme</div>
+                <div class="setting-description">Dark theme (only option available)</div>
+            </div>
+            <div class="setting-control">
+                <span style="color: #7b96c0;">Dark</span>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Language</div>
+                <div class="setting-description">Display language</div>
+            </div>
+            <div class="setting-control">
+                <select class="input-select" onchange="updateLanguage(this.value)">
+                    <option value="en" selected>English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="ja">Japanese</option>
+                    <option value="zh">Chinese</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Date Format</div>
+                <div class="setting-description">Preferred date display format</div>
+            </div>
+            <div class="setting-control">
+                <select class="input-select" onchange="updateDateFormat(this.value)">
+                    <option value="us">MM/DD/YYYY</option>
+                    <option value="eu" selected>DD/MM/YYYY</option>
+                    <option value="iso">YYYY-MM-DD</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Time Format</div>
+                <div class="setting-description">12-hour or 24-hour format</div>
+            </div>
+            <div class="setting-control">
+                <select class="input-select" onchange="updateTimeFormat(this.value)">
+                    <option value="12">12-hour (AM/PM)</option>
+                    <option value="24" selected>24-hour</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Settings -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>📊 Dashboard</h2>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Show Recent Items</div>
+                <div class="setting-description">Display recent items on dashboard</div>
+            </div>
+            <div class="setting-control">
+                <label class="switch">
+                    <input type="checkbox" checked onchange="toggleSetting('show_recent', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Show Favorites</div>
+                <div class="setting-description">Display favorite items on dashboard</div>
+            </div>
+            <div class="setting-control">
+                <label class="switch">
+                    <input type="checkbox" checked onchange="toggleSetting('show_favorites', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Show Activity</div>
+                <div class="setting-description">Display recent activity on dashboard</div>
+            </div>
+            <div class="setting-control">
+                <label class="switch">
+                    <input type="checkbox" checked onchange="toggleSetting('show_activity', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Settings -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>🔔 Notifications</h2>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Login Alerts</div>
+                <div class="setting-description">Get notified when a login occurs</div>
+            </div>
+            <div class="setting-control">
+                <label class="switch">
+                    <input type="checkbox" checked onchange="toggleSetting('login_alerts', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Security Alerts</div>
+                <div class="setting-description">Get notified about security events</div>
+            </div>
+            <div class="setting-control">
+                <label class="switch">
+                    <input type="checkbox" checked onchange="toggleSetting('security_alerts', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Backup Notifications</div>
+                <div class="setting-description">Get notified about backup status</div>
+            </div>
+            <div class="setting-control">
+                <label class="switch">
+                    <input type="checkbox" checked onchange="toggleSetting('backup_alerts', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import/Export -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>📤 Data Management</h2>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Export Data</div>
+                <div class="setting-description">Export all vault data as JSON</div>
+            </div>
+            <div class="setting-control">
+                <button class="btn-sm btn-primary-sm" onclick="exportData()">Export</button>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Import Data</div>
+                <div class="setting-description">Import data from JSON file</div>
+            </div>
+            <div class="setting-control">
+                <button class="btn-sm btn-secondary-sm" onclick="importData()">Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Profile editing
+    function editProfile(field) {
+        const labels = {
+            'name': 'Full Name',
+            'username': 'Username',
+            'email': 'Email'
+        };
+
+        const value = prompt(`Enter new ${labels[field]}:`);
+        if (!value) return;
+
+        fetch('/settings/update-profile', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ field: field, value: value })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Profile updated successfully!', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showNotification('Error: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error updating profile', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    function uploadAvatar() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = function (e) {
+            if (this.files && this.files[0]) {
+                const formData = new FormData();
+                formData.append('avatar', this.files[0]);
+
+                fetch('/settings/upload-avatar', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification('Avatar updated!', 'success');
+                            setTimeout(() => window.location.reload(), 1000);
+                        } else {
+                            showNotification('Error: ' + data.error, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showNotification('Error uploading avatar', 'error');
+                        console.error('Error:', error);
+                    });
+            }
+        };
+        input.click();
+    }
+
+    function updateLanguage(value) {
+        fetch('/settings/update-language', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ language: value })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Language updated!', 'success');
+                }
+            })
+            .catch(error => {
+                showNotification('Error updating language', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    function updateDateFormat(value) {
+        fetch('/settings/update-date-format', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ format: value })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Date format updated!', 'success');
+                }
+            })
+            .catch(error => {
+                showNotification('Error updating date format', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    function updateTimeFormat(value) {
+        fetch('/settings/update-time-format', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ format: value })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Time format updated!', 'success');
+                }
+            })
+            .catch(error => {
+                showNotification('Error updating time format', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    function toggleSetting(setting, value) {
+        fetch('/settings/update-setting', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ setting: setting, value: value })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Setting updated!', 'success');
+                }
+            })
+            .catch(error => {
+                showNotification('Error updating setting', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    function exportData() {
+        fetch('/settings/export-data')
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `vault_data_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                showNotification('Data exported successfully!', 'success');
+            })
+            .catch(error => {
+                showNotification('Error exporting data', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    function importData() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = function (e) {
+            if (this.files && this.files[0]) {
+                const formData = new FormData();
+                formData.append('file', this.files[0]);
+
+                fetch('/settings/import-data', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification('Data imported successfully!', 'success');
+                            setTimeout(() => window.location.reload(), 1500);
+                        } else {
+                            showNotification('Error: ' + data.error, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showNotification('Error importing data', 'error');
+                        console.error('Error:', error);
+                    });
+            }
+        };
+        input.click();
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 4000);
+    }
+</script>
+{% endblock %}

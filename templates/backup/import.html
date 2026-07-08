@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Import Backup - Private Vault{% endblock %}
+
+{% block content %}
+<div class="import-container">
+    <div class="page-header">
+        <h1>📥 Import Backup</h1>
+        <p class="subtitle">Restore your vault data from an encrypted backup file</p>
+    </div>
+
+    <div class="import-warning">
+        <div class="warning-box">
+            <span class="warning-icon">⚠️</span>
+            <div class="warning-content">
+                <h3>Important Notice</h3>
+                <p>Importing a backup will replace all current data in your vault.</p>
+                <p>Make sure you have a recent backup of your current data before proceeding.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="import-form-container">
+        <form id="importForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="backupFile">Select Backup File</label>
+                <div class="file-drop-zone" id="fileDropZone">
+                    <input type="file" id="backupFile" accept=".json,.enc" required>
+                    <div class="drop-zone-content">
+                        <span class="icon">📁</span>
+                        <p>Drag & drop your backup file here</p>
+                        <p class="small">or click to browse</p>
+                        <p class="file-info">Supported formats: .json, .enc</p>
+                    </div>
+                </div>
+                <div id="fileInfo" class="file-info-display hidden">
+                    <span class="file-name"></span>
+                    <span class="file-size"></span>
+                    <button type="button" class="btn-sm btn-danger" onclick="clearFile()">✕</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="importPassword">Backup Password</label>
+                <input type="password" id="importPassword" placeholder="Enter backup password (if encrypted)">
+                <small>Leave empty if the backup is not password protected</small>
+            </div>
+
+            <div class="form-group">
+                <label for="importMode">Import Mode</label>
+                <select id="importMode">
+                    <option value="replace">Replace all data (recommended)</option>
+                    <option value="merge">Merge with existing data</option>
+                    <option value="new">Import as new (creates new entries)</option>
+                </select>
+            </div>
+
+            <div class="preview-section" id="previewSection" style="display: none;">
+                <h3>Preview Backup Content</h3>
+                <div class="backup-preview">
+                    <div class="preview-item">
+                        <span>Total Items:</span>
+                        <span id="previewItems">0</span>
+                    </div>
+                    <div class="preview-item">
+                        <span>Categories:</span>
+                        <span id="previewCategories">0</span>
+                    </div>
+                    <div class="preview-item">
+                        <span>Files:</span>
+                        <span id="previewFiles">0</span>
+                    </div>
+                    <div class="preview-item">
+                        <span>Created:</span>
+                        <span id="previewDate">-</span>
+                    </div>
+                </div>
+                <div id="previewCategoryList" class="preview-categories"></div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/backup'">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="importBtn">Import Backup</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="recent-imports">
+        <h3>Recent Imports</h3>
+        <div id="recentImportsList">
+            <p class="text-muted">No recent imports</p>
+        </div>
+    </div>
+</div>
+
+<!-- Import Progress Modal -->
+<div id="progressModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⏳ Importing Backup...</h3>
+        </div>
+        <div class="modal-body">
+            <div class="progress-bar">
+                <div class="progress-fill" id="importProgress" style="width: 0%"></div>
+            </div>
+            <p id="progressText">Initializing import...</p>
+            <div id="importLog" class="import-log"></div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    let selectedFile = null;
+
+    document.getElementById('backupFile').addEventListener('change', function (e) {
+        if (this.files && this.files[0]) {
+            selectedFile = this.files[0];
+            displayFileInfo(selectedFile);
+            previewBackup(selectedFile);
+        }
+    });
+
+    function displayFileInfo(file) {
+        const info = document.getElementById('fileInfo');
+        info.classList.remove('hidden');
+        info.querySelector('.file-name').textContent = file.name;
+        info.querySelector('.file-size').textContent = formatSize(file.size);
+        document.querySelector('.file-drop-zone').style.display = 'none';
+    }
+
+    function clearFile() {
+        selectedFile = null;
+        document.getElementById('backupFile').value = '';
+        document.getElementById('fileInfo').classList.add('hidden');
+        document.querySelector('.file-drop-zone').style.display = 'block';
+        document.getElementById('previewSection').style.display = 'none';
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function previewBackup(file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            try {
+                const content = e.target.result;
+                let data;
+                try {
+                    data = JSON.parse(content);
+                } catch {
+                    // Maybe encrypted, try with password
+                    const password = document.getElementById('importPassword').value;
+                    if (password) {
+                        // Try to decrypt (server-side preview)
+                        previewEncryptedBackup(file, password);
+                        return;
+                    }
+                    showNotification('Unable to preview: File may be encrypted', 'warning');
+                    return;
+                }
+
+                displayPreview(data);
+            } catch (error) {
+                console.error('Error previewing backup:', error);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function previewEncryptedBackup(file, password) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('password', password);
+
+        fetch('/backup/preview', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayPreview(data.data);
+                } else {
+                    showNotification('Unable to preview: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error previewing backup', 'error');
+            });
+    }
+
+    function displayPreview(data) {
+        const section = document.getElementById('previewSection');
+        section.style.display = 'block';
+
+        document.getElementById('previewItems').textContent = data.items || 0;
+        document.getElementById('previewCategories').textContent = data.categories || 0;
+        document.getElementById('previewFiles').textContent = data.files || 0;
+        document.getElementById('previewDate').textContent = data.created_at || '-';
+
+        const categoryList = document.getElementById('previewCategoryList');
+        if (data.category_list && data.category_list.length > 0) {
+            categoryList.innerHTML = data.category_list.map(cat =>
+                `<span class="category-tag">${cat}</span>`
+            ).join('');
+        } else {
+            categoryList.innerHTML = '<span class="text-muted">No categories found</span>';
+        }
+    }
+
+    document.getElementById('importForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        if (!selectedFile) {
+            showNotification('Please select a backup file', 'error');
+            return;
+        }
+
+        const password = document.getElementById('importPassword').value;
+        const mode = document.getElementById('importMode').value;
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('password', password);
+        formData.append('mode', mode);
+
+        document.getElementById('progressModal').classList.remove('hidden');
+        const progress = document.getElementById('importProgress');
+        const text = document.getElementById('progressText');
+        const log = document.getElementById('importLog');
+
+        let currentProgress = 0;
+        const interval = setInterval(() => {
+            currentProgress += 5;
+            progress.style.width = currentProgress + '%';
+            text.textContent = `Importing... ${currentProgress}%`;
+            if (currentProgress >= 100) {
+                clearInterval(interval);
+            }
+        }, 300);
+
+        fetch('/backup/import', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(interval);
+                progress.style.width = '100%';
+                if (data.success) {
+                    text.textContent = '✅ Import completed successfully!';
+                    log.innerHTML = data.log.map(msg => `<div>${msg}</div>`).join('');
+                    setTimeout(() => {
+                        document.getElementById('progressModal').classList.add('hidden');
+                        showNotification('Backup imported successfully!', 'success');
+                        window.location.href = '/dashboard';
+                    }, 2000);
+                } else {
+                    text.textContent = '❌ Import failed: ' + data.error;
+                    log.innerHTML = data.log.map(msg => `<div class="error">${msg}</div>`).join('');
+                    setTimeout(() => {
+                        document.getElementById('progressModal').classList.add('hidden');
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                clearInterval(interval);
+                document.getElementById('progressModal').classList.add('hidden');
+                showNotification('Error importing backup', 'error');
+                console.error('Error importing backup:', error);
+            });
+    });
+
+    function loadRecentImports() {
+        fetch('/backup/recent-imports')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('recentImportsList');
+                if (data.imports && data.imports.length > 0) {
+                    container.innerHTML = data.imports.map(imp => `
+                    <div class="import-item">
+                        <span>📄 ${imp.filename}</span>
+                        <span>${formatDate(imp.created_at)}</span>
+                        <span class="status-badge ${imp.status}">${imp.status}</span>
+                    </div>
+                `).join('');
+                } else {
+                    container.innerHTML = '<p class="text-muted">No recent imports</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading recent imports:', error);
+            });
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+
+    // Load recent imports on page load
+    document.addEventListener('DOMContentLoaded', loadRecentImports);
+</script>
+{% endblock %}

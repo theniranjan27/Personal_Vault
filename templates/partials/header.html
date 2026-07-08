@@ -1,0 +1,359 @@
+<header class="vault-header">
+    <div class="header-left">
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+            <span class="menu-icon">☰</span>
+        </button>
+        <a href="/dashboard" class="logo-link">
+            <span class="logo-icon">🔐</span>
+            <span class="logo-text">Private Vault</span>
+        </a>
+    </div>
+
+    <div class="header-center">
+        <div class="header-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="headerSearch" placeholder="Quick search..." class="header-search-input">
+        </div>
+    </div>
+
+    <div class="header-right">
+        <div class="header-status">
+            <span class="status-dot online"></span>
+            <span class="status-text">Secure</span>
+        </div>
+        <div class="header-user">
+            <span class="user-name">{{ user.full_name if user else 'Admin' }}</span>
+            <div class="user-avatar" id="userAvatar">
+                {{ (user.full_name[0] if user and user.full_name else 'A')|upper }}
+            </div>
+            <div class="user-dropdown" id="userDropdown">
+                <a href="/settings/profile">👤 Profile</a>
+                <a href="/settings/security">🔒 Security</a>
+                <a href="/settings/general">⚙️ Settings</a>
+                <hr>
+                <a href="/auth/logout" class="logout-link">🚪 Logout</a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<style>
+    .vault-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 24px;
+        background: #0f1a2b;
+        border-bottom: 1px solid #1a2a40;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .menu-toggle {
+        background: transparent;
+        border: none;
+        color: #7b96c0;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 8px;
+        transition: all 0.2s;
+        display: none;
+    }
+
+    .menu-toggle:hover {
+        background: #1a2a40;
+        color: #eef4ff;
+    }
+
+    .logo-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: #eef4ff;
+    }
+
+    .logo-icon {
+        font-size: 28px;
+    }
+
+    .logo-text {
+        font-size: 20px;
+        font-weight: 600;
+        background: linear-gradient(135deg, #7aa9ff, #4f7cff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .header-center {
+        flex: 1;
+        max-width: 500px;
+        margin: 0 24px;
+    }
+
+    .header-search {
+        position: relative;
+        width: 100%;
+    }
+
+    .header-search .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #5a7a9a;
+        font-size: 16px;
+    }
+
+    .header-search-input {
+        width: 100%;
+        padding: 8px 16px 8px 42px;
+        background: #0b1422;
+        border: 1px solid #2a3f5c;
+        border-radius: 24px;
+        color: #f0f5ff;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .header-search-input:focus {
+        border-color: #4a85ff;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(42, 107, 255, 0.1);
+    }
+
+    .header-search-input::placeholder {
+        color: #5a7a9a;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .header-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 12px;
+        background: rgba(76, 175, 80, 0.1);
+        border-radius: 20px;
+        border: 1px solid rgba(76, 175, 80, 0.2);
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .status-dot.online {
+        background: #4caf50;
+        animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .status-text {
+        font-size: 12px;
+        color: #4caf50;
+        font-weight: 500;
+    }
+
+    .header-user {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .user-name {
+        font-size: 14px;
+        color: #b3ceff;
+    }
+
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #2a6bff;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 16px;
+        transition: all 0.2s;
+    }
+
+    .user-avatar:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 16px rgba(42, 107, 255, 0.3);
+    }
+
+    .user-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: #0f1a2b;
+        border: 1px solid #2a3f5c;
+        border-radius: 12px;
+        padding: 8px 0;
+        min-width: 180px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        display: none;
+        z-index: 200;
+    }
+
+    .user-dropdown.show {
+        display: block;
+    }
+
+    .user-dropdown a {
+        display: block;
+        padding: 8px 16px;
+        color: #b3ceff;
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .user-dropdown a:hover {
+        background: #1a2a40;
+        color: #eef4ff;
+    }
+
+    .user-dropdown hr {
+        border: none;
+        border-top: 1px solid #1a2a40;
+        margin: 4px 12px;
+    }
+
+    .user-dropdown .logout-link {
+        color: #ef5350;
+    }
+
+    .user-dropdown .logout-link:hover {
+        background: rgba(239, 83, 80, 0.1);
+    }
+
+    @media (max-width: 768px) {
+        .vault-header {
+            padding: 10px 16px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .menu-toggle {
+            display: block;
+        }
+
+        .logo-text {
+            display: none;
+        }
+
+        .header-center {
+            order: 3;
+            flex: 1 1 100%;
+            margin: 4px 0 0 0;
+            max-width: 100%;
+        }
+
+        .header-right {
+            gap: 8px;
+        }
+
+        .header-status {
+            display: none;
+        }
+
+        .user-name {
+            display: none;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            font-size: 14px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .vault-header {
+            padding: 8px 12px;
+        }
+
+        .logo-icon {
+            font-size: 22px;
+        }
+
+        .header-search-input {
+            font-size: 13px;
+            padding: 6px 12px 6px 34px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // User dropdown toggle
+        const userAvatar = document.getElementById('userAvatar');
+        const userDropdown = document.getElementById('userDropdown');
+
+        userAvatar.addEventListener('click', function (e) {
+            e.stopPropagation();
+            userDropdown.classList.toggle('show');
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.header-user')) {
+                userDropdown.classList.remove('show');
+            }
+        });
+
+        // Mobile menu toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.querySelector('.sidebar');
+
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', function () {
+                sidebar.classList.toggle('mobile-open');
+            });
+        }
+
+        // Header search
+        const headerSearch = document.getElementById('headerSearch');
+        if (headerSearch) {
+            headerSearch.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    const query = this.value.trim();
+                    if (query) {
+                        window.location.href = `/dashboard/search?q=${encodeURIComponent(query)}`;
+                    }
+                }
+            });
+        }
+    });
+</script>

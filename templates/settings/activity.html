@@ -1,0 +1,567 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Logs - Private Vault{% endblock %}
+
+{% block content %}
+<style>
+    .settings-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .settings-header {
+        margin-bottom: 32px;
+    }
+
+    .settings-header h1 {
+        font-size: 28px;
+        color: #eef4ff;
+        margin-bottom: 8px;
+    }
+
+    .settings-header p {
+        color: #7b96c0;
+        font-size: 15px;
+    }
+
+    .activity-filters {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .activity-filters input,
+    .activity-filters select {
+        padding: 8px 12px;
+        background: #0b1422;
+        border: 1px solid #2a3f5c;
+        border-radius: 8px;
+        color: #f0f5ff;
+        font-size: 14px;
+    }
+
+    .activity-filters input:focus,
+    .activity-filters select:focus {
+        border-color: #4a85ff;
+        outline: none;
+    }
+
+    .activity-filters .search-input {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .activity-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: #0f1a2b;
+        border: 1px solid #1a2a40;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+    }
+
+    .stat-card .stat-value {
+        font-size: 24px;
+        font-weight: 600;
+        color: #eef4ff;
+    }
+
+    .stat-card .stat-label {
+        font-size: 13px;
+        color: #7b96c0;
+        margin-top: 4px;
+    }
+
+    .activity-table-container {
+        background: #0f1a2b;
+        border: 1px solid #1a2a40;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .activity-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .activity-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        color: #7b96c0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: #0b1422;
+        border-bottom: 1px solid #1a2a40;
+    }
+
+    .activity-table td {
+        padding: 12px 16px;
+        font-size: 14px;
+        color: #eef4ff;
+        border-bottom: 1px solid #1a2a40;
+    }
+
+    .activity-table tr:hover td {
+        background: #0b1422;
+    }
+
+    .activity-table .action-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .action-badge.login {
+        background: rgba(76, 175, 80, 0.15);
+        color: #4caf50;
+    }
+
+    .action-badge.logout {
+        background: rgba(239, 83, 80, 0.15);
+        color: #ef5350;
+    }
+
+    .action-badge.add {
+        background: rgba(42, 107, 255, 0.15);
+        color: #4a85ff;
+    }
+
+    .action-badge.edit {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+    }
+
+    .action-badge.delete {
+        background: rgba(239, 83, 80, 0.15);
+        color: #ef5350;
+    }
+
+    .action-badge.view {
+        background: rgba(76, 175, 80, 0.15);
+        color: #4caf50;
+    }
+
+    .action-badge.copy {
+        background: rgba(255, 152, 0, 0.15);
+        color: #ff9800;
+    }
+
+    .action-badge.reveal {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+    }
+
+    .action-badge.upload {
+        background: rgba(42, 107, 255, 0.15);
+        color: #4a85ff;
+    }
+
+    .action-badge.download {
+        background: rgba(76, 175, 80, 0.15);
+        color: #4caf50;
+    }
+
+    .action-badge.backup {
+        background: rgba(255, 152, 0, 0.15);
+        color: #ff9800;
+    }
+
+    .action-badge.restore {
+        background: rgba(239, 83, 80, 0.15);
+        color: #ef5350;
+    }
+
+    .action-badge.security {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+    }
+
+    .action-badge.settings {
+        background: rgba(42, 107, 255, 0.15);
+        color: #4a85ff;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .pagination .btn-sm {
+        padding: 6px 16px;
+        border: none;
+        border-radius: 8px;
+        background: #1f3147;
+        color: #b3ceff;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .pagination .btn-sm:hover {
+        background: #2a405a;
+    }
+
+    .pagination .btn-sm:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .pagination .page-info {
+        color: #7b96c0;
+        font-size: 14px;
+    }
+
+    .export-btn {
+        padding: 8px 20px;
+        background: #2a6bff;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .export-btn:hover {
+        background: #3f7aff;
+    }
+
+    .clear-btn {
+        padding: 8px 20px;
+        background: #b13e4b;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .clear-btn:hover {
+        background: #c94f5d;
+    }
+
+    @media (max-width: 768px) {
+        .settings-container {
+            padding: 16px;
+        }
+
+        .activity-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .activity-table {
+            font-size: 13px;
+        }
+
+        .activity-table th,
+        .activity-table td {
+            padding: 8px 12px;
+        }
+
+        .activity-filters {
+            flex-direction: column;
+        }
+
+        .activity-filters .search-input {
+            min-width: auto;
+        }
+
+        .activity-table-container {
+            overflow-x: auto;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .activity-stats {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .stat-card .stat-value {
+            font-size: 20px;
+        }
+    }
+</style>
+
+<div class="settings-container">
+    <div class="settings-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h1>📋 Activity Logs</h1>
+                <p>Complete audit trail of all actions in your vault</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="export-btn" onclick="exportActivity()">📥 Export Logs</button>
+                <button class="clear-btn" onclick="clearActivity()">🗑️ Clear Logs</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="activity-filters">
+        <input type="text" class="search-input" id="searchActivity" placeholder="Search activities..."
+            oninput="applyFilters()">
+        <select id="filterAction" onchange="applyFilters()">
+            <option value="all">All Actions</option>
+            <option value="login">Login</option>
+            <option value="logout">Logout</option>
+            <option value="add">Add</option>
+            <option value="edit">Edit</option>
+            <option value="delete">Delete</option>
+            <option value="view">View</option>
+            <option value="copy">Copy</option>
+            <option value="reveal">Reveal</option>
+            <option value="upload">Upload</option>
+            <option value="download">Download</option>
+            <option value="backup">Backup</option>
+            <option value="restore">Restore</option>
+            <option value="security">Security</option>
+            <option value="settings">Settings</option>
+        </select>
+        <input type="date" id="filterDate" onchange="applyFilters()">
+        <button class="btn-sm" onclick="resetFilters()">Reset</button>
+    </div>
+
+    <div class="activity-stats">
+        <div class="stat-card">
+            <div class="stat-value" id="totalActivities">0</div>
+            <div class="stat-label">Total Activities</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="todayActivities">0</div>
+            <div class="stat-label">Today</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="weekActivities">0</div>
+            <div class="stat-label">This Week</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="monthActivities">0</div>
+            <div class="stat-label">This Month</div>
+        </div>
+    </div>
+
+    <div class="activity-table-container">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Action</th>
+                    <th>Description</th>
+                    <th>IP Address</th>
+                    <th>Device</th>
+                </tr>
+            </thead>
+            <tbody id="activityList">
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #5a7a9a;">Loading activities...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        <button class="btn-sm" id="prevPage" onclick="loadPage('prev')">Previous</button>
+        <span class="page-info" id="pageInfo">Page 1 of 1</span>
+        <button class="btn-sm" id="nextPage" onclick="loadPage('next')">Next</button>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let currentFilters = {};
+
+    document.addEventListener('DOMContentLoaded', function () {
+        loadActivities();
+        loadStats();
+    });
+
+    function loadActivities(page = 1, filters = {}) {
+        const queryParams = new URLSearchParams({
+            page: page,
+            ...filters
+        });
+
+        fetch(`/activity/list?${queryParams}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.activities && data.activities.length > 0) {
+                    renderActivities(data.activities);
+                    totalPages = data.pages || 1;
+                    updatePagination(data);
+                } else {
+                    document.getElementById('activityList').innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #5a7a9a; padding: 40px;">
+                            No activities found
+                        </td>
+                    </tr>
+                `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading activities:', error);
+                document.getElementById('activityList').innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #ef5350; padding: 40px;">
+                        Error loading activities
+                    </td>
+                </tr>
+            `;
+            });
+    }
+
+    function renderActivities(activities) {
+        const tbody = document.getElementById('activityList');
+        tbody.innerHTML = activities.map(activity => `
+        <tr>
+            <td style="font-size: 13px; color: #7b96c0;">${formatDate(activity.timestamp)}</td>
+            <td><span class="action-badge ${activity.action}">${activity.action}</span></td>
+            <td>${activity.description || '-'}</td>
+            <td style="font-size: 13px; color: #7b96c0;">${activity.ip_address || '-'}</td>
+            <td style="font-size: 13px; color: #7b96c0;">${activity.user_agent ? truncateDevice(activity.user_agent) : '-'}</td>
+        </tr>
+    `).join('');
+    }
+
+    function updatePagination(data) {
+        const pageInfo = document.getElementById('pageInfo');
+        pageInfo.textContent = `Page ${data.current_page || 1} of ${data.total_pages || 1}`;
+        currentPage = data.current_page || 1;
+        totalPages = data.total_pages || 1;
+
+        document.getElementById('prevPage').disabled = currentPage <= 1;
+        document.getElementById('nextPage').disabled = currentPage >= totalPages;
+    }
+
+    function loadPage(direction) {
+        let newPage = currentPage;
+        if (direction === 'prev' && currentPage > 1) {
+            newPage = currentPage - 1;
+        } else if (direction === 'next' && currentPage < totalPages) {
+            newPage = currentPage + 1;
+        }
+        if (newPage !== currentPage) {
+            currentPage = newPage;
+            loadActivities(currentPage, currentFilters);
+        }
+    }
+
+    function loadStats() {
+        fetch('/activity/stats')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('totalActivities').textContent = data.total || 0;
+                document.getElementById('todayActivities').textContent = data.today || 0;
+                document.getElementById('weekActivities').textContent = data.week || 0;
+                document.getElementById('monthActivities').textContent = data.month || 0;
+            })
+            .catch(error => {
+                console.error('Error loading stats:', error);
+            });
+    }
+
+    function applyFilters() {
+        const search = document.getElementById('searchActivity').value.trim();
+        const action = document.getElementById('filterAction').value;
+        const date = document.getElementById('filterDate').value;
+
+        currentFilters = {};
+        if (search) currentFilters.search = search;
+        if (action !== 'all') currentFilters.action = action;
+        if (date) currentFilters.date = date;
+
+        currentPage = 1;
+        loadActivities(currentPage, currentFilters);
+    }
+
+    function resetFilters() {
+        document.getElementById('searchActivity').value = '';
+        document.getElementById('filterAction').value = 'all';
+        document.getElementById('filterDate').value = '';
+        currentFilters = {};
+        currentPage = 1;
+        loadActivities();
+    }
+
+    function exportActivity() {
+        window.location.href = '/activity/export';
+    }
+
+    function clearActivity() {
+        if (!confirm('Are you sure you want to clear all activity logs? This cannot be undone.')) {
+            return;
+        }
+
+        if (!confirm('Type "CLEAR" to confirm.')) {
+            const confirmText = prompt('Type "CLEAR" to confirm:');
+            if (confirmText !== 'CLEAR') {
+                showNotification('Clear cancelled', 'warning');
+                return;
+            }
+        }
+
+        fetch('/activity/clear', {
+            method: 'POST'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Activity logs cleared!', 'success');
+                    loadActivities();
+                    loadStats();
+                } else {
+                    showNotification('Error: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error clearing logs', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+
+    function truncateDevice(userAgent) {
+        if (!userAgent) return '-';
+        if (userAgent.length > 30) {
+            return userAgent.substring(0, 27) + '...';
+        }
+        return userAgent;
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 4000);
+    }
+</script>
+{% endblock %}

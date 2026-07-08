@@ -1,0 +1,924 @@
+{% extends "base.html" %}
+
+{% block page_title %}Banking Vault{% endblock %}
+{% block page_subtitle %}Manage bank accounts, cards and UPI securely{% endblock %}
+
+{% block content %}
+<style>
+    .bank-wrap {
+        display: grid;
+        gap: 14px;
+    }
+
+    .bank-header {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .bank-header h2 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    .bank-header p {
+        margin: 4px 0 0;
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    .add-bank-btn {
+        padding: 9px 15px;
+        border-radius: var(--radius);
+        border: 1px solid var(--accent);
+        background: rgba(108, 140, 255, .12);
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .bank-search input {
+        width: 100%;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        border-radius: var(--radius);
+        padding: 10px 13px;
+        outline: none;
+        font-size: 13px;
+    }
+
+    .bank-filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
+    .filter-btn.active,
+    .filter-btn:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+        background: rgba(108, 140, 255, .1);
+    }
+
+    .bank-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+        gap: 12px;
+    }
+
+    .bank-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 13px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .bank-card:hover {
+        border-color: var(--border-light);
+        transform: translateY(-2px);
+    }
+
+    .card-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .bank-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+    }
+
+    .card-main {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .card-title {
+        color: var(--text-primary);
+        font-size: 15px;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .card-sub {
+        color: var(--text-muted);
+        font-size: 12px;
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .fav-btn {
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .fav-btn.active {
+        color: #fbbf24;
+    }
+
+    .bank-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 7px 0;
+        border-top: 1px solid var(--border);
+        font-size: 12px;
+    }
+
+    .bank-row span:first-child {
+        color: var(--text-muted);
+        flex-shrink: 0;
+    }
+
+    .bank-row span:last-child {
+        color: var(--text-primary);
+        text-align: right;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .bank-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+        margin-top: 10px;
+    }
+
+    .bank-actions button {
+        border: none;
+        border-radius: var(--radius);
+        padding: 7px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .edit-btn {
+        background: rgba(108, 140, 255, .12);
+        color: var(--accent);
+    }
+
+    .del-btn {
+        background: rgba(248, 113, 113, .12);
+        color: var(--danger);
+    }
+
+    .bank-empty {
+        grid-column: 1/-1;
+        text-align: center;
+        padding: 35px;
+        border: 1px dashed var(--border);
+        border-radius: var(--radius-lg);
+        color: var(--text-muted);
+        background: var(--bg-card);
+    }
+
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, .82);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-overlay.show {
+        display: flex;
+    }
+
+    .modal-box {
+        width: 100%;
+        max-width: 620px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 22px;
+        position: relative;
+    }
+
+    .modal-box.wide {
+        max-width: 980px;
+    }
+
+    .modal-box h2 {
+        margin: 0 0 15px;
+        color: var(--text-primary);
+        font-size: 19px;
+    }
+
+    .x-close {
+        position: absolute;
+        top: 16px;
+        right: 18px;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 22px;
+        cursor: pointer;
+    }
+
+    .x-close:hover {
+        color: var(--danger);
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 11px;
+    }
+
+    .field.full {
+        grid-column: 1/-1;
+    }
+
+    .field label {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+
+    .field input,
+    .field select {
+        width: 100%;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        border-radius: var(--radius);
+        padding: 9px 11px;
+        outline: none;
+        font-size: 13px;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 9px;
+        margin-top: 16px;
+        padding-top: 15px;
+        border-top: 1px solid var(--border);
+    }
+
+    .modal-actions button {
+        border: none;
+        border-radius: var(--radius);
+        padding: 8px 15px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .cancel-btn {
+        background: var(--bg-input);
+        color: var(--text-muted);
+    }
+
+    .save-btn {
+        background: rgba(108, 140, 255, .14);
+        color: var(--accent);
+        border: 1px solid rgba(108, 140, 255, .35) !important;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 14px;
+    }
+
+    .detail-card {
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        font-size: 14px;
+    }
+
+    .detail-card .lbl {
+        color: var(--text-muted);
+        flex-shrink: 0;
+    }
+
+    .detail-card .val {
+        color: var(--text-primary);
+        font-weight: 600;
+        text-align: right;
+        word-break: break-word;
+    }
+
+    .secret-val {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .icon-btn {
+        border: none;
+        background: rgba(108, 140, 255, .12);
+        color: var(--accent);
+        border-radius: 8px;
+        padding: 6px 8px;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    @media(max-width:700px) {
+        .bank-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .form-grid,
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .field.full {
+            grid-column: auto;
+        }
+    }
+</style>
+
+<div class="bank-wrap">
+    <div class="bank-header">
+        <div>
+            <h2>🏦 Banking Vault</h2>
+            <p>Save bank accounts, cards and UPI details clearly.</p>
+        </div>
+        <button class="add-bank-btn" onclick="openAdd()">+ Add Banking</button>
+    </div>
+
+    <div class="bank-search">
+        <input type="text" id="searchBank" placeholder="Search bank, account, card, UPI, phone, IFSC...">
+    </div>
+
+    <div class="bank-filters">
+        <button class="filter-btn active" data-type="all" onclick="filterType('all')">All</button>
+        <button class="filter-btn" data-type="Bank Account" onclick="filterType('Bank Account')">🏦 Bank
+            Account</button>
+        <button class="filter-btn" data-type="Card" onclick="filterType('Card')">💳 Card</button>
+        <button class="filter-btn" data-type="UPI" onclick="filterType('UPI')">📱 UPI</button>
+    </div>
+
+    <div class="bank-grid" id="bankList"></div>
+</div>
+
+<div class="modal-overlay" id="addModal">
+    <div class="modal-box">
+        <button class="x-close" onclick="closeAdd()">×</button>
+        <h2>Add Banking Detail</h2>
+
+        <form id="addForm">
+            <div class="form-grid">
+                <div class="field full">
+                    <label>Type</label>
+                    <select id="addType" onchange="toggleFields('add')">
+                        <option value="Bank Account">🏦 Bank Account</option>
+                        <option value="Card">💳 Card</option>
+                        <option value="UPI">📱 UPI</option>
+                    </select>
+                </div>
+
+                <div class="field full">
+                    <label>Title</label>
+                    <input type="text" id="addLabel" placeholder="SBI Savings, HDFC Card, Google Pay UPI" required>
+                </div>
+
+                <div class="bank-account-fields field full"><label>Bank Name</label><input type="text" id="addBankName">
+                </div>
+                <div class="bank-account-fields field"><label>Account Holder Name</label><input type="text"
+                        id="addHolder"></div>
+                <div class="bank-account-fields field"><label>Account Type</label><input type="text" id="addAccountType"
+                        placeholder="Savings / Current"></div>
+                <div class="bank-account-fields field"><label>Account Number</label><input type="text"
+                        id="addAccountNumber"></div>
+                <div class="bank-account-fields field"><label>CIF Number</label><input type="text" id="addCif"></div>
+                <div class="bank-account-fields field"><label>IFSC</label><input type="text" id="addIfsc"></div>
+                <div class="bank-account-fields field"><label>Branch</label><input type="text" id="addBranch"></div>
+                <div class="bank-account-fields field"><label>Phone Number</label><input type="text" id="addPhone">
+                </div>
+
+                <div class="card-fields field full"><label>Full Name</label><input type="text" id="addCardName"></div>
+                <div class="card-fields field full"><label>Card Number</label><input type="text" id="addCardNumber">
+                </div>
+                <div class="card-fields field"><label>CVV</label><input type="password" id="addCvv" maxlength="4"
+                        placeholder="xxx"></div>
+                <div class="card-fields field"><label>Valid Thru</label><input type="text" id="addValidThru"
+                        placeholder="MM/YY"></div>
+                <div class="card-fields field"><label>Bank Name</label><input type="text" id="addCardBank"></div>
+                <div class="card-fields field"><label>Card Type</label><input type="text" id="addCardType"
+                        placeholder="Debit / Credit"></div>
+                <div class="card-fields field full">
+                    <label>Network</label>
+                    <select id="addNetwork">
+                        <option value="Domestic">Domestic</option>
+                        <option value="International">International</option>
+                    </select>
+                </div>
+
+                <div class="upi-fields field full"><label>UPI ID</label><input type="text" id="addUpiId"></div>
+                <div class="upi-fields field"><label>Email</label><input type="text" id="addUpiEmail"></div>
+                <div class="upi-fields field"><label>Phone Number</label><input type="text" id="addUpiPhone"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="closeAdd()">Cancel</button>
+                <button type="submit" class="save-btn">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+        <button class="x-close" onclick="closeEdit()">×</button>
+        <h2>Edit Banking Detail</h2>
+
+        <form id="editForm">
+            <input type="hidden" id="editId">
+
+            <div class="form-grid">
+                <div class="field full">
+                    <label>Type</label>
+                    <select id="editType" onchange="toggleFields('edit')">
+                        <option value="Bank Account">🏦 Bank Account</option>
+                        <option value="Card">💳 Card</option>
+                        <option value="UPI">📱 UPI</option>
+                    </select>
+                </div>
+
+                <div class="field full"><label>Title</label><input type="text" id="editLabel" required></div>
+
+                <div class="bank-account-fields-edit field full"><label>Bank Name</label><input type="text"
+                        id="editBankName"></div>
+                <div class="bank-account-fields-edit field"><label>Account Holder Name</label><input type="text"
+                        id="editHolder"></div>
+                <div class="bank-account-fields-edit field"><label>Account Type</label><input type="text"
+                        id="editAccountType"></div>
+                <div class="bank-account-fields-edit field"><label>Account Number</label><input type="text"
+                        id="editAccountNumber"></div>
+                <div class="bank-account-fields-edit field"><label>CIF Number</label><input type="text" id="editCif">
+                </div>
+                <div class="bank-account-fields-edit field"><label>IFSC</label><input type="text" id="editIfsc"></div>
+                <div class="bank-account-fields-edit field"><label>Branch</label><input type="text" id="editBranch">
+                </div>
+                <div class="bank-account-fields-edit field"><label>Phone Number</label><input type="text"
+                        id="editPhone"></div>
+
+                <div class="card-fields-edit field full"><label>Full Name</label><input type="text" id="editCardName">
+                </div>
+                <div class="card-fields-edit field full"><label>Card Number</label><input type="text"
+                        id="editCardNumber"></div>
+                <div class="card-fields-edit field"><label>CVV</label><input type="password" id="editCvv" maxlength="4">
+                </div>
+                <div class="card-fields-edit field"><label>Valid Thru</label><input type="text" id="editValidThru">
+                </div>
+                <div class="card-fields-edit field"><label>Bank Name</label><input type="text" id="editCardBank"></div>
+                <div class="card-fields-edit field"><label>Card Type</label><input type="text" id="editCardType"></div>
+                <div class="card-fields-edit field full">
+                    <label>Network</label>
+                    <select id="editNetwork">
+                        <option value="Domestic">Domestic</option>
+                        <option value="International">International</option>
+                    </select>
+                </div>
+
+                <div class="upi-fields-edit field full"><label>UPI ID</label><input type="text" id="editUpiId"></div>
+                <div class="upi-fields-edit field"><label>Email</label><input type="text" id="editUpiEmail"></div>
+                <div class="upi-fields-edit field"><label>Phone Number</label><input type="text" id="editUpiPhone">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="closeEdit()">Cancel</button>
+                <button type="submit" class="save-btn">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="detailsModal">
+    <div class="modal-box wide">
+        <button class="x-close" onclick="closeDetails()">×</button>
+        <h2 id="detailTitle">Bank Details</h2>
+        <div class="detail-grid" id="detailGrid"></div>
+    </div>
+</div>
+
+<script>
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    let allItems = [];
+    let currentFilter = 'all';
+    let currentDetailId = null;
+    let secretVisible = {};
+
+    const typeIcons = { 'Bank Account': '🏦', 'Card': '💳', 'UPI': '📱' };
+
+    function escapeHtml(v) {
+        return String(v || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", "&#039;");
+    }
+
+    function maskNumber(v) {
+        if (!v) return '••••••';
+        v = String(v);
+        if (v.length <= 4) return '•'.repeat(v.length);
+        return '•'.repeat(Math.max(4, v.length - 4)) + v.slice(-4);
+    }
+
+    function getExtra(item) { return item.extra || {}; }
+    function getType(item) { return getExtra(item).type || 'Bank Account'; }
+
+    function mainValueFromExtra(extra) {
+        if (extra.type === 'Card') return extra.card_number || '';
+        if (extra.type === 'UPI') return extra.upi_id || '';
+        return extra.account_number || '';
+    }
+
+    function toggleFields(mode) {
+        const type = document.getElementById(mode + 'Type').value;
+        const groups = [
+            ['Bank Account', mode === 'add' ? '.bank-account-fields' : '.bank-account-fields-edit'],
+            ['Card', mode === 'add' ? '.card-fields' : '.card-fields-edit'],
+            ['UPI', mode === 'add' ? '.upi-fields' : '.upi-fields-edit']
+        ];
+
+        groups.forEach(([name, selector]) => {
+            document.querySelectorAll(selector).forEach(el => {
+                el.style.display = type === name ? 'block' : 'none';
+            });
+        });
+    }
+
+    function loadItems() {
+        fetch('/banking/list')
+            .then(r => r.json())
+            .then(d => {
+                allItems = d.items || [];
+                renderItems();
+            });
+    }
+
+    function renderItems() {
+        const list = document.getElementById('bankList');
+        const q = document.getElementById('searchBank').value.toLowerCase();
+
+        let items = allItems.filter(item => {
+            const e = getExtra(item);
+            const type = getType(item);
+            const text = `${item.label} ${item.value} ${type} ${Object.values(e).join(' ')}`.toLowerCase();
+            return (currentFilter === 'all' || type === currentFilter) && text.includes(q);
+        });
+
+        if (!items.length) {
+            list.innerHTML = `<div class="bank-empty">No banking details saved yet.</div>`;
+            return;
+        }
+
+        list.innerHTML = items.map(item => {
+            const e = getExtra(item);
+            const type = getType(item);
+            const icon = typeIcons[type] || '📌';
+            const mainValue = item.value || mainValueFromExtra(e);
+
+            let sub = '';
+            let row1 = '';
+            let row2 = '';
+
+            if (type === 'Bank Account') {
+                sub = e.bank_name || 'Bank Account';
+                row1 = `<div class="bank-row"><span>Account No</span><span>${maskNumber(mainValue)}</span></div>`;
+                row2 = `<div class="bank-row"><span>IFSC</span><span>${escapeHtml(e.ifsc || '—')}</span></div>`;
+            } else if (type === 'Card') {
+                sub = e.card_bank || 'Card';
+                row1 = `<div class="bank-row"><span>Card No</span><span>${maskNumber(mainValue)}</span></div>`;
+                row2 = `<div class="bank-row"><span>Valid Thru</span><span>${escapeHtml(e.valid_thru || '—')}</span></div>`;
+            } else {
+                sub = e.upi_id || 'UPI';
+                row1 = `<div class="bank-row"><span>UPI ID</span><span>${escapeHtml(e.upi_id || mainValue || '—')}</span></div>`;
+                row2 = `<div class="bank-row"><span>Phone</span><span>${escapeHtml(e.upi_phone || '—')}</span></div>`;
+            }
+
+            return `
+                <div class="bank-card" onclick="openDetails(${item.id})">
+                    <div class="card-top">
+                        <div class="bank-icon">${icon}</div>
+                        <div class="card-main">
+                            <div class="card-title">${escapeHtml(item.label)}</div>
+                            <div class="card-sub">${escapeHtml(sub)}</div>
+                        </div>
+                        <button class="fav-btn ${item.is_favorite ? 'active' : ''}" onclick="event.stopPropagation(); toggleFav(${item.id})">${item.is_favorite ? '⭐' : '☆'}</button>
+                    </div>
+
+                    <div class="bank-row"><span>Type</span><span>${escapeHtml(type)}</span></div>
+                    ${row1}
+                    ${row2}
+
+                    <div class="bank-actions" onclick="event.stopPropagation();">
+                        <button class="edit-btn" onclick="openEdit(${item.id})">Edit</button>
+                        <button class="del-btn" onclick="deleteItem(${item.id})">Delete</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function filterType(type) {
+        currentFilter = type;
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.type === type));
+        renderItems();
+    }
+
+    function buildData(mode) {
+        const type = document.getElementById(mode + 'Type').value;
+        const label = document.getElementById(mode + 'Label').value.trim();
+        let extra = { type };
+        let value = '';
+
+        if (type === 'Bank Account') {
+            extra.bank_name = document.getElementById(mode + 'BankName').value.trim();
+            extra.holder = document.getElementById(mode + 'Holder').value.trim();
+            extra.account_type = document.getElementById(mode + 'AccountType').value.trim();
+            extra.account_number = document.getElementById(mode + 'AccountNumber').value.trim();
+            extra.cif = document.getElementById(mode + 'Cif').value.trim();
+            extra.ifsc = document.getElementById(mode + 'Ifsc').value.trim();
+            extra.branch = document.getElementById(mode + 'Branch').value.trim();
+            extra.phone = document.getElementById(mode + 'Phone').value.trim();
+            value = extra.account_number;
+        }
+
+        if (type === 'Card') {
+            extra.full_name = document.getElementById(mode + 'CardName').value.trim();
+            extra.card_number = document.getElementById(mode + 'CardNumber').value.trim();
+            extra.cvv = document.getElementById(mode + 'Cvv').value.trim();
+            extra.valid_thru = document.getElementById(mode + 'ValidThru').value.trim();
+            extra.card_bank = document.getElementById(mode + 'CardBank').value.trim();
+            extra.card_type = document.getElementById(mode + 'CardType').value.trim();
+            extra.network = document.getElementById(mode + 'Network').value;
+            value = extra.card_number;
+        }
+
+        if (type === 'UPI') {
+            extra.upi_id = document.getElementById(mode + 'UpiId').value.trim();
+            extra.upi_email = document.getElementById(mode + 'UpiEmail').value.trim();
+            extra.upi_phone = document.getElementById(mode + 'UpiPhone').value.trim();
+            value = extra.upi_id;
+        }
+
+        return { label, value, notes: '', extra };
+    }
+
+    function openAdd() {
+        document.getElementById('addForm').reset();
+        document.getElementById('addType').value = 'Bank Account';
+        toggleFields('add');
+        document.getElementById('addModal').classList.add('show');
+    }
+
+    function closeAdd() { document.getElementById('addModal').classList.remove('show'); }
+
+    document.getElementById('addForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const data = buildData('add');
+
+        if (!data.label || !data.value) {
+            showToast('Title and main number / ID required', 'error');
+            return;
+        }
+
+        fetch('/banking/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body: JSON.stringify(data)
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) { showToast('Saved', 'success'); closeAdd(); loadItems(); }
+                else showToast(d.error || 'Save failed', 'error');
+            });
+    });
+
+    function openEdit(id) {
+        const item = allItems.find(i => i.id === id);
+        if (!item) return;
+
+        const e = getExtra(item);
+        const type = getType(item);
+
+        document.getElementById('editId').value = item.id;
+        document.getElementById('editType').value = type;
+        document.getElementById('editLabel').value = item.label || '';
+
+        document.getElementById('editBankName').value = e.bank_name || '';
+        document.getElementById('editHolder').value = e.holder || '';
+        document.getElementById('editAccountType').value = e.account_type || '';
+        document.getElementById('editAccountNumber').value = e.account_number || item.value || '';
+        document.getElementById('editCif').value = e.cif || '';
+        document.getElementById('editIfsc').value = e.ifsc || '';
+        document.getElementById('editBranch').value = e.branch || '';
+        document.getElementById('editPhone').value = e.phone || '';
+
+        document.getElementById('editCardName').value = e.full_name || '';
+        document.getElementById('editCardNumber').value = e.card_number || item.value || '';
+        document.getElementById('editCvv').value = e.cvv || '';
+        document.getElementById('editValidThru').value = e.valid_thru || '';
+        document.getElementById('editCardBank').value = e.card_bank || '';
+        document.getElementById('editCardType').value = e.card_type || '';
+        document.getElementById('editNetwork').value = e.network || 'Domestic';
+
+        document.getElementById('editUpiId').value = e.upi_id || item.value || '';
+        document.getElementById('editUpiEmail').value = e.upi_email || '';
+        document.getElementById('editUpiPhone').value = e.upi_phone || '';
+
+        toggleFields('edit');
+        document.getElementById('editModal').classList.add('show');
+    }
+
+    function closeEdit() { document.getElementById('editModal').classList.remove('show'); }
+
+    document.getElementById('editForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const id = document.getElementById('editId').value;
+        const data = buildData('edit');
+
+        fetch('/banking/update/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body: JSON.stringify(data)
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) { showToast('Updated', 'success'); closeEdit(); loadItems(); }
+                else showToast(d.error || 'Update failed', 'error');
+            });
+    });
+
+    function detailItem(label, value, key, copyValue) {
+        const visible = secretVisible[key];
+        const display = visible ? escapeHtml(value || '—') : maskNumber(value || '');
+        return `
+            <div class="detail-card">
+                <span class="lbl">${label}</span>
+                <span class="val secret-val">
+                    ${display}
+                    <button class="icon-btn" onclick="toggleSecret('${key}')">👁️</button>
+                    <button class="icon-btn" onclick="copyText('${escapeHtml(copyValue || value || '')}')">📋</button>
+                </span>
+            </div>
+        `;
+    }
+
+    function normalItem(label, value) {
+        return `<div class="detail-card"><span class="lbl">${label}</span><span class="val">${escapeHtml(value || '—')}</span></div>`;
+    }
+
+    function openDetails(id) {
+        currentDetailId = id;
+        secretVisible = {};
+        renderDetails();
+        document.getElementById('detailsModal').classList.add('show');
+    }
+
+    function renderDetails() {
+        const item = allItems.find(i => i.id === currentDetailId);
+        if (!item) return;
+
+        const e = getExtra(item);
+        const type = getType(item);
+
+        document.getElementById('detailTitle').textContent = item.label || 'Banking Details';
+
+        if (type === 'Bank Account') {
+            document.getElementById('detailGrid').innerHTML = `
+                ${normalItem('Type', type)}
+                ${normalItem('Bank Name', e.bank_name)}
+                ${normalItem('Account Holder', e.holder)}
+                ${normalItem('Account Type', e.account_type)}
+                ${detailItem('Account Number', e.account_number || item.value, 'account')}
+                ${detailItem('CIF Number', e.cif, 'cif')}
+                ${normalItem('IFSC', e.ifsc)}
+                ${normalItem('Branch', e.branch)}
+                ${normalItem('Phone Number', e.phone)}
+            `;
+        }
+
+        if (type === 'Card') {
+            document.getElementById('detailGrid').innerHTML = `
+                ${normalItem('Type', type)}
+                ${normalItem('Full Name', e.full_name)}
+                ${detailItem('Card Number', e.card_number || item.value, 'card')}
+                ${detailItem('CVV', e.cvv, 'cvv')}
+                ${normalItem('Valid Thru', e.valid_thru)}
+                ${normalItem('Bank Name', e.card_bank)}
+                ${normalItem('Card Type', e.card_type)}
+                ${normalItem('Network', e.network)}
+            `;
+        }
+
+        if (type === 'UPI') {
+            document.getElementById('detailGrid').innerHTML = `
+                ${normalItem('Type', type)}
+                ${normalItem('UPI ID', e.upi_id || item.value)}
+                ${normalItem('Email', e.upi_email)}
+                ${normalItem('Phone Number', e.upi_phone)}
+            `;
+        }
+    }
+
+    function toggleSecret(key) {
+        secretVisible[key] = !secretVisible[key];
+        renderDetails();
+    }
+
+    function copyText(text) {
+        navigator.clipboard.writeText(text).then(() => showToast('Copied', 'success'));
+    }
+
+    function closeDetails() {
+        document.getElementById('detailsModal').classList.remove('show');
+        currentDetailId = null;
+        secretVisible = {};
+    }
+
+    function deleteItem(id) {
+        if (!confirm('Delete this banking detail?')) return;
+        fetch('/banking/delete/' + id, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': csrf }
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) { showToast('Deleted', 'success'); loadItems(); }
+                else showToast(d.error || 'Delete failed', 'error');
+            });
+    }
+
+    function toggleFav(id) {
+        fetch('/banking/favorite/' + id, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf }
+        })
+            .then(r => r.json())
+            .then(d => { if (d.success) loadItems(); });
+    }
+
+    document.getElementById('searchBank').addEventListener('input', renderItems);
+
+    document.getElementById('addModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAdd(); });
+    document.getElementById('editModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeEdit(); });
+    document.getElementById('detailsModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDetails(); });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            closeAdd(); closeEdit(); closeDetails();
+        }
+    });
+
+    loadItems();
+</script>
+{% endblock %}

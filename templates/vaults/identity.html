@@ -1,0 +1,987 @@
+{% extends "base.html" %}
+
+{% block page_title %}Identity Vault{% endblock %}
+{% block page_subtitle %}Manage your identity documents{% endblock %}
+
+{% block content %}
+<style>
+    .id-wrap {
+        display: grid;
+        gap: 14px
+    }
+
+    .id-header {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center
+    }
+
+    .id-header h2 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 20px
+    }
+
+    .id-header p {
+        margin: 4px 0 0;
+        color: var(--text-muted);
+        font-size: 12px
+    }
+
+    .id-add-btn {
+        padding: 9px 15px;
+        border-radius: var(--radius);
+        border: 1px solid var(--accent);
+        background: rgba(108, 140, 255, .12);
+        color: var(--accent);
+        font-weight: 600;
+        cursor: pointer
+    }
+
+    .id-search input {
+        width: 100%;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        border-radius: var(--radius);
+        padding: 10px 13px;
+        outline: none
+    }
+
+    .id-filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap
+    }
+
+    .filter-btn {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 12px;
+        cursor: pointer
+    }
+
+    .filter-btn.active,
+    .filter-btn:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+        background: rgba(108, 140, 255, .1)
+    }
+
+    .id-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+        gap: 12px
+    }
+
+    .id-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 13px;
+        cursor: pointer;
+        transition: var(--transition)
+    }
+
+    .id-card:hover {
+        border-color: var(--border-light);
+        transform: translateY(-2px)
+    }
+
+    .card-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px
+    }
+
+    .id-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px
+    }
+
+    .card-main {
+        flex: 1;
+        min-width: 0
+    }
+
+    .card-title {
+        color: var(--text-primary);
+        font-size: 15px;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis
+    }
+
+    .card-sub {
+        color: var(--text-muted);
+        font-size: 12px;
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis
+    }
+
+    .fav-btn {
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 16px;
+        cursor: pointer
+    }
+
+    .fav-btn.active {
+        color: #fbbf24
+    }
+
+    .id-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 7px 0;
+        border-top: 1px solid var(--border);
+        font-size: 12px
+    }
+
+    .id-row span:first-child {
+        color: var(--text-muted)
+    }
+
+    .id-row span:last-child {
+        color: var(--text-primary);
+        text-align: right;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap
+    }
+
+    .id-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+        margin-top: 10px
+    }
+
+    .id-actions button {
+        border: none;
+        border-radius: var(--radius);
+        padding: 7px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer
+    }
+
+    .edit-btn {
+        background: rgba(108, 140, 255, .12);
+        color: var(--accent)
+    }
+
+    .del-btn {
+        background: rgba(248, 113, 113, .12);
+        color: var(--danger)
+    }
+
+    .id-empty {
+        grid-column: 1/-1;
+        text-align: center;
+        padding: 35px;
+        border: 1px dashed var(--border);
+        border-radius: var(--radius-lg);
+        color: var(--text-muted);
+        background: var(--bg-card)
+    }
+
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, .82);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px
+    }
+
+    .modal-overlay.show {
+        display: flex
+    }
+
+    .modal-box {
+        width: 100%;
+        max-width: 620px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 22px;
+        position: relative
+    }
+
+    .modal-box.detail-normal {
+        max-width: 480px
+    }
+
+    .modal-box h2 {
+        margin: 0 0 15px;
+        color: var(--text-primary);
+        font-size: 19px
+    }
+
+    .x-close {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 22px;
+        cursor: pointer
+    }
+
+    .x-close:hover {
+        color: var(--danger)
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 11px
+    }
+
+    .field.full {
+        grid-column: 1/-1
+    }
+
+    .field label {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        text-transform: uppercase
+    }
+
+    .field input,
+    .field select {
+        width: 100%;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        border-radius: var(--radius);
+        padding: 9px 11px;
+        outline: none
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 9px;
+        margin-top: 16px;
+        padding-top: 15px;
+        border-top: 1px solid var(--border)
+    }
+
+    .modal-actions button {
+        border: none;
+        border-radius: var(--radius);
+        padding: 8px 15px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer
+    }
+
+    .cancel-btn {
+        background: var(--bg-input);
+        color: var(--text-muted)
+    }
+
+    .save-btn {
+        background: rgba(108, 140, 255, .14);
+        color: var(--accent);
+        border: 1px solid rgba(108, 140, 255, .35) !important
+    }
+
+    .detail-head {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 13px;
+        margin-bottom: 13px
+    }
+
+    .detail-head h3 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 21px
+    }
+
+    .detail-head p {
+        margin: 5px 0 0;
+        color: var(--text-muted);
+        font-size: 13px
+    }
+
+    .detail-list {
+        display: grid;
+        gap: 9px
+    }
+
+    .detail-row {
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 11px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px
+    }
+
+    .detail-row .lbl {
+        color: var(--text-muted);
+        font-size: 12px
+    }
+
+    .detail-row .val {
+        color: var(--text-primary);
+        font-weight: 700;
+        text-align: right;
+        word-break: break-word
+    }
+
+    .secret-val {
+        display: flex;
+        gap: 7px;
+        align-items: center
+    }
+
+    .icon-btn {
+        border: none;
+        background: rgba(108, 140, 255, .12);
+        color: var(--accent);
+        border-radius: 8px;
+        padding: 5px 7px;
+        cursor: pointer
+    }
+</style>
+
+<div class="id-wrap">
+    <div class="id-header">
+        <div>
+            <h2>🪪 Identity Vault</h2>
+            <p>Save Aadhaar, Passport, PAN, Voter ID and Driving License.</p>
+        </div>
+        <button class="id-add-btn" onclick="openAdd()">+ Add Identity</button>
+    </div>
+
+    <div class="id-search">
+        <input type="text" id="searchId" placeholder="Search identity...">
+    </div>
+
+    <div class="id-filters">
+        <button class="filter-btn active" data-type="all" onclick="filterType('all')">All</button>
+        <button class="filter-btn" data-type="Aadhaar" onclick="filterType('Aadhaar')">🆔 Aadhaar</button>
+        <button class="filter-btn" data-type="Passport" onclick="filterType('Passport')">📘 Passport</button>
+        <button class="filter-btn" data-type="PAN" onclick="filterType('PAN')">💳 PAN</button>
+        <button class="filter-btn" data-type="Voter ID" onclick="filterType('Voter ID')">🗳️ Voter ID</button>
+        <button class="filter-btn" data-type="Driving License" onclick="filterType('Driving License')">🚗 DL</button>
+        <button class="filter-btn" data-type="Other" onclick="filterType('Other')">📌 Other</button>
+    </div>
+
+    <div class="id-grid" id="idList"></div>
+</div>
+
+<div class="modal-overlay" id="addModal">
+    <div class="modal-box">
+        <button class="x-close" onclick="closeAdd()">×</button>
+        <h2>Add Identity</h2>
+
+        <form id="addForm">
+            <div class="form-grid">
+                <div class="field full">
+                    <label>ID Type</label>
+                    <select id="addType" onchange="toggleFields('add')">
+                        <option value="Aadhaar">Aadhaar</option>
+                        <option value="Passport">Passport</option>
+                        <option value="PAN">PAN</option>
+                        <option value="Voter ID">Voter ID</option>
+                        <option value="Driving License">Driving License</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="aadhaar-fields field full"><label>Full Name</label><input id="addAadhaarName"></div>
+                <div class="aadhaar-fields field"><label>DOB</label><input type="date" id="addAadhaarDob"></div>
+                <div class="aadhaar-fields field"><label>Aadhaar No</label><input id="addAadhaarNo"></div>
+                <div class="aadhaar-fields field full"><label>Linked Phone</label><input id="addAadhaarPhone"></div>
+
+                <div class="passport-fields field full"><label>Full Name</label><input id="addPassportName"></div>
+                <div class="passport-fields field full"><label>Passport No</label><input id="addPassportNo"></div>
+                <div class="passport-fields field"><label>Date of Issue</label><input type="date" id="addPassportIssue">
+                </div>
+                <div class="passport-fields field"><label>Date of Expiry</label><input type="date"
+                        id="addPassportExpiry"></div>
+                <div class="passport-fields field full"><label>Place Issued By</label><input id="addPassportPlace">
+                </div>
+
+                <div class="pan-fields field full"><label>Full Name</label><input id="addPanName"></div>
+                <div class="pan-fields field"><label>DOB</label><input type="date" id="addPanDob"></div>
+                <div class="pan-fields field"><label>PAN No</label><input id="addPanNo"></div>
+
+                <div class="voter-fields field full"><label>Full Name</label><input id="addVoterName"></div>
+                <div class="voter-fields field"><label>DOB</label><input type="date" id="addVoterDob"></div>
+                <div class="voter-fields field"><label>Phone No</label><input id="addVoterPhone"></div>
+                <div class="voter-fields field full"><label>EPIC No</label><input id="addEpicNo"></div>
+
+                <div class="dl-fields field full"><label>Full Name</label><input id="addDlName"></div>
+                <div class="dl-fields field full"><label>DL Number</label><input id="addDlNo"></div>
+                <div class="dl-fields field"><label>Date of Issue</label><input type="date" id="addDlIssue"></div>
+                <div class="dl-fields field"><label>Date of Expiry</label><input type="date" id="addDlExpiry"></div>
+
+                <div class="other-fields field full"><label>Title</label><input id="addOtherTitle"></div>
+                <div class="other-fields field full"><label>ID Number</label><input id="addOtherNo"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="closeAdd()">Cancel</button>
+                <button type="submit" class="save-btn">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+        <button class="x-close" onclick="closeEdit()">×</button>
+        <h2>Edit Identity</h2>
+
+        <form id="editForm">
+            <input type="hidden" id="editId">
+            <div class="form-grid">
+                <div class="field full">
+                    <label>ID Type</label>
+                    <select id="editType" onchange="toggleFields('edit')">
+                        <option value="Aadhaar">Aadhaar</option>
+                        <option value="Passport">Passport</option>
+                        <option value="PAN">PAN</option>
+                        <option value="Voter ID">Voter ID</option>
+                        <option value="Driving License">Driving License</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="aadhaar-fields-edit field full"><label>Full Name</label><input id="editAadhaarName"></div>
+                <div class="aadhaar-fields-edit field"><label>DOB</label><input type="date" id="editAadhaarDob"></div>
+                <div class="aadhaar-fields-edit field"><label>Aadhaar No</label><input id="editAadhaarNo"></div>
+                <div class="aadhaar-fields-edit field full"><label>Linked Phone</label><input id="editAadhaarPhone">
+                </div>
+
+                <div class="passport-fields-edit field full"><label>Full Name</label><input id="editPassportName"></div>
+                <div class="passport-fields-edit field full"><label>Passport No</label><input id="editPassportNo"></div>
+                <div class="passport-fields-edit field"><label>Date of Issue</label><input type="date"
+                        id="editPassportIssue"></div>
+                <div class="passport-fields-edit field"><label>Date of Expiry</label><input type="date"
+                        id="editPassportExpiry"></div>
+                <div class="passport-fields-edit field full"><label>Place Issued By</label><input
+                        id="editPassportPlace"></div>
+
+                <div class="pan-fields-edit field full"><label>Full Name</label><input id="editPanName"></div>
+                <div class="pan-fields-edit field"><label>DOB</label><input type="date" id="editPanDob"></div>
+                <div class="pan-fields-edit field"><label>PAN No</label><input id="editPanNo"></div>
+
+                <div class="voter-fields-edit field full"><label>Full Name</label><input id="editVoterName"></div>
+                <div class="voter-fields-edit field"><label>DOB</label><input type="date" id="editVoterDob"></div>
+                <div class="voter-fields-edit field"><label>Phone No</label><input id="editVoterPhone"></div>
+                <div class="voter-fields-edit field full"><label>EPIC No</label><input id="editEpicNo"></div>
+
+                <div class="dl-fields-edit field full"><label>Full Name</label><input id="editDlName"></div>
+                <div class="dl-fields-edit field full"><label>DL Number</label><input id="editDlNo"></div>
+                <div class="dl-fields-edit field"><label>Date of Issue</label><input type="date" id="editDlIssue"></div>
+                <div class="dl-fields-edit field"><label>Date of Expiry</label><input type="date" id="editDlExpiry">
+                </div>
+
+                <div class="other-fields-edit field full"><label>Title</label><input id="editOtherTitle"></div>
+                <div class="other-fields-edit field full"><label>ID Number</label><input id="editOtherNo"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="closeEdit()">Cancel</button>
+                <button type="submit" class="save-btn">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="detailsModal">
+    <div class="modal-box detail-normal">
+        <button class="x-close" onclick="closeDetails()">×</button>
+        <div id="detailCard"></div>
+    </div>
+</div>
+
+<script>
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    let allItems = [];
+    let currentFilter = 'all';
+    let currentDetailId = null;
+    let secretVisible = {};
+
+    const icons = {
+        'Aadhaar': '🆔',
+        'Passport': '📘',
+        'PAN': '💳',
+        'Voter ID': '🗳️',
+        'Driving License': '🚗',
+        'Other': '📌'
+    };
+
+    function parseExtra(extra) {
+        if (!extra) return {};
+        if (typeof extra === 'object') return extra;
+        if (typeof extra === 'string') {
+            try { return JSON.parse(extra); }
+            catch (e) { return {}; }
+        }
+        return {};
+    }
+
+    function getExtra(item) {
+        return parseExtra(item.extra || item.extra_data || item.metadata || item.details);
+    }
+
+    function typeOf(item) {
+        const e = getExtra(item);
+        return e.type || item.category || 'Other';
+    }
+
+    function esc(v) {
+        return String(v || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", "&#039;");
+    }
+
+    function mask(v) {
+        v = String(v || '');
+        if (!v) return '••••••';
+        if (v.length <= 4) return '•'.repeat(v.length);
+        return '•'.repeat(v.length - 4) + v.slice(-4);
+    }
+
+    function mainNumber(item) {
+        const e = getExtra(item), t = typeOf(item);
+        if (t === 'Aadhaar') return e.aadhaar_no || item.value || '';
+        if (t === 'Passport') return e.passport_no || item.value || '';
+        if (t === 'PAN') return e.pan_no || item.value || '';
+        if (t === 'Voter ID') return e.epic_no || item.value || '';
+        if (t === 'Driving License') return e.dl_no || item.value || '';
+        return e.other_no || item.value || '';
+    }
+
+    function mainName(item) {
+        const e = getExtra(item), t = typeOf(item);
+        if (t === 'Other') return e.title || item.label || 'Other';
+        return e.full_name || item.label || t;
+    }
+
+    function toggleFields(mode) {
+        const type = document.getElementById(mode + 'Type').value;
+        const groups = [
+            ['Aadhaar', mode === 'add' ? '.aadhaar-fields' : '.aadhaar-fields-edit'],
+            ['Passport', mode === 'add' ? '.passport-fields' : '.passport-fields-edit'],
+            ['PAN', mode === 'add' ? '.pan-fields' : '.pan-fields-edit'],
+            ['Voter ID', mode === 'add' ? '.voter-fields' : '.voter-fields-edit'],
+            ['Driving License', mode === 'add' ? '.dl-fields' : '.dl-fields-edit'],
+            ['Other', mode === 'add' ? '.other-fields' : '.other-fields-edit']
+        ];
+
+        groups.forEach(([name, selector]) => {
+            document.querySelectorAll(selector).forEach(el => {
+                el.style.display = type === name ? 'block' : 'none';
+            });
+        });
+    }
+
+    function loadItems() {
+        fetch('/identity/list')
+            .then(r => r.json())
+            .then(d => {
+                allItems = d.items || [];
+                renderItems();
+            });
+    }
+
+    function renderItems() {
+        const list = document.getElementById('idList');
+        const q = document.getElementById('searchId').value.toLowerCase();
+
+        let items = allItems.filter(item => {
+            const e = getExtra(item);
+            const t = typeOf(item);
+            const text = `${item.label || ''} ${item.value || ''} ${t} ${Object.values(e).join(' ')}`.toLowerCase();
+            return (currentFilter === 'all' || t === currentFilter) && text.includes(q);
+        });
+
+        if (!items.length) {
+            list.innerHTML = `<div class="id-empty">No identity documents saved yet.</div>`;
+            return;
+        }
+
+        list.innerHTML = items.map(item => {
+            const t = typeOf(item);
+            return `
+            <div class="id-card" onclick="openDetails(${item.id})">
+                <div class="card-top">
+                    <div class="id-icon">${icons[t] || '📌'}</div>
+                    <div class="card-main">
+                        <div class="card-title">${esc(t)}</div>
+                        <div class="card-sub">${esc(mainName(item))}</div>
+                    </div>
+                    <button class="fav-btn ${item.is_favorite ? 'active' : ''}" onclick="event.stopPropagation();toggleFav(${item.id})">${item.is_favorite ? '⭐' : '☆'}</button>
+                </div>
+                <div class="id-row"><span>ID Number</span><span>${mask(mainNumber(item))}</span></div>
+                <div class="id-row"><span>Name</span><span>${esc(mainName(item))}</span></div>
+                <div class="id-actions" onclick="event.stopPropagation();">
+                    <button class="edit-btn" onclick="openEdit(${item.id})">Edit</button>
+                    <button class="del-btn" onclick="deleteItem(${item.id})">Delete</button>
+                </div>
+            </div>
+        `;
+        }).join('');
+    }
+
+    function filterType(type) {
+        currentFilter = type;
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.type === type));
+        renderItems();
+    }
+
+    function buildData(mode) {
+        const t = document.getElementById(mode + 'Type').value;
+        let e = { type: t };
+        let label = t, value = '';
+
+        if (t === 'Aadhaar') {
+            e.full_name = document.getElementById(mode + 'AadhaarName').value.trim();
+            e.dob = document.getElementById(mode + 'AadhaarDob').value;
+            e.aadhaar_no = document.getElementById(mode + 'AadhaarNo').value.trim();
+            e.linked_phone = document.getElementById(mode + 'AadhaarPhone').value.trim();
+            label = 'Aadhaar - ' + (e.full_name || 'ID');
+            value = e.aadhaar_no;
+        }
+
+        if (t === 'Passport') {
+            e.full_name = document.getElementById(mode + 'PassportName').value.trim();
+            e.passport_no = document.getElementById(mode + 'PassportNo').value.trim();
+            e.date_of_issue = document.getElementById(mode + 'PassportIssue').value;
+            e.date_of_expiry = document.getElementById(mode + 'PassportExpiry').value;
+            e.place_issued_by = document.getElementById(mode + 'PassportPlace').value.trim();
+            label = 'Passport - ' + (e.full_name || 'ID');
+            value = e.passport_no;
+        }
+
+        if (t === 'PAN') {
+            e.full_name = document.getElementById(mode + 'PanName').value.trim();
+            e.dob = document.getElementById(mode + 'PanDob').value;
+            e.pan_no = document.getElementById(mode + 'PanNo').value.trim();
+            label = 'PAN - ' + (e.full_name || 'ID');
+            value = e.pan_no;
+        }
+
+        if (t === 'Voter ID') {
+            e.full_name = document.getElementById(mode + 'VoterName').value.trim();
+            e.dob = document.getElementById(mode + 'VoterDob').value;
+            e.phone = document.getElementById(mode + 'VoterPhone').value.trim();
+            e.epic_no = document.getElementById(mode + 'EpicNo').value.trim();
+            label = 'Voter ID - ' + (e.full_name || 'ID');
+            value = e.epic_no;
+        }
+
+        if (t === 'Driving License') {
+            e.full_name = document.getElementById(mode + 'DlName').value.trim();
+            e.dl_no = document.getElementById(mode + 'DlNo').value.trim();
+            e.date_of_issue = document.getElementById(mode + 'DlIssue').value;
+            e.date_of_expiry = document.getElementById(mode + 'DlExpiry').value;
+            label = 'Driving License - ' + (e.full_name || 'ID');
+            value = e.dl_no;
+        }
+
+        if (t === 'Other') {
+            e.title = document.getElementById(mode + 'OtherTitle').value.trim();
+            e.other_no = document.getElementById(mode + 'OtherNo').value.trim();
+            label = e.title || 'Other ID';
+            value = e.other_no;
+        }
+
+        return { label, value, notes: '', extra: e };
+    }
+
+    function openAdd() {
+        document.getElementById('addForm').reset();
+        document.getElementById('addType').value = 'Aadhaar';
+        toggleFields('add');
+        document.getElementById('addModal').classList.add('show');
+    }
+
+    function closeAdd() {
+        document.getElementById('addModal').classList.remove('show');
+    }
+
+    document.getElementById('addForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const data = buildData('add');
+
+        if (!data.value) {
+            showToast('ID number required', 'error');
+            return;
+        }
+
+        fetch('/identity/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body: JSON.stringify(data)
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    showToast('Identity saved', 'success');
+                    closeAdd();
+                    loadItems();
+                } else {
+                    showToast(d.error || 'Save failed', 'error');
+                }
+            });
+    });
+
+    function openEdit(id) {
+        const item = allItems.find(i => i.id === id);
+        if (!item) return;
+
+        const e = getExtra(item);
+        const t = typeOf(item);
+
+        document.getElementById('editId').value = item.id;
+        document.getElementById('editType').value = t;
+
+        document.getElementById('editAadhaarName').value = e.full_name || '';
+        document.getElementById('editAadhaarDob').value = e.dob || '';
+        document.getElementById('editAadhaarNo').value = e.aadhaar_no || item.value || '';
+        document.getElementById('editAadhaarPhone').value = e.linked_phone || '';
+
+        document.getElementById('editPassportName').value = e.full_name || '';
+        document.getElementById('editPassportNo').value = e.passport_no || item.value || '';
+        document.getElementById('editPassportIssue').value = e.date_of_issue || '';
+        document.getElementById('editPassportExpiry').value = e.date_of_expiry || '';
+        document.getElementById('editPassportPlace').value = e.place_issued_by || '';
+
+        document.getElementById('editPanName').value = e.full_name || '';
+        document.getElementById('editPanDob').value = e.dob || '';
+        document.getElementById('editPanNo').value = e.pan_no || item.value || '';
+
+        document.getElementById('editVoterName').value = e.full_name || '';
+        document.getElementById('editVoterDob').value = e.dob || '';
+        document.getElementById('editVoterPhone').value = e.phone || '';
+        document.getElementById('editEpicNo').value = e.epic_no || item.value || '';
+
+        document.getElementById('editDlName').value = e.full_name || '';
+        document.getElementById('editDlNo').value = e.dl_no || item.value || '';
+        document.getElementById('editDlIssue').value = e.date_of_issue || '';
+        document.getElementById('editDlExpiry').value = e.date_of_expiry || '';
+
+        document.getElementById('editOtherTitle').value = e.title || item.label || '';
+        document.getElementById('editOtherNo').value = e.other_no || item.value || '';
+
+        toggleFields('edit');
+        document.getElementById('editModal').classList.add('show');
+    }
+
+    function closeEdit() {
+        document.getElementById('editModal').classList.remove('show');
+    }
+
+    document.getElementById('editForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const id = document.getElementById('editId').value;
+        const data = buildData('edit');
+
+        fetch('/identity/update/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body: JSON.stringify(data)
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    showToast('Identity updated', 'success');
+                    closeEdit();
+                    loadItems();
+                } else {
+                    showToast(d.error || 'Update failed', 'error');
+                }
+            });
+    });
+
+    function row(label, value, key = null) {
+        if (key) {
+            const shown = secretVisible[key] ? esc(value || '—') : mask(value || '');
+            return `
+            <div class="detail-row">
+                <span class="lbl">${label}</span>
+                <span class="val secret-val">
+                    <span>${shown}</span>
+                    <button class="icon-btn" onclick="toggleSecret('${key}')">👁️</button>
+                    <button class="icon-btn" onclick="copyText('${esc(value || '')}')">📋</button>
+                </span>
+            </div>`;
+        }
+
+        return `<div class="detail-row"><span class="lbl">${label}</span><span class="val">${esc(value || '—')}</span></div>`;
+    }
+
+    function openDetails(id) {
+        currentDetailId = id;
+        secretVisible = {};
+        renderDetails();
+        document.getElementById('detailsModal').classList.add('show');
+    }
+
+    function renderDetails() {
+        const item = allItems.find(i => i.id === currentDetailId);
+        if (!item) return;
+
+        const e = getExtra(item);
+        const t = typeOf(item);
+        let rows = '';
+
+        if (t === 'Aadhaar') {
+            rows = row('Full Name', e.full_name) +
+                row('Date of Birth', e.dob) +
+                row('Aadhaar No', e.aadhaar_no || item.value, 'aadhaar') +
+                row('Linked Phone', e.linked_phone);
+        }
+
+        if (t === 'Passport') {
+            rows = row('Full Name', e.full_name) +
+                row('Passport No', e.passport_no || item.value, 'passport') +
+                row('Date of Issue', e.date_of_issue) +
+                row('Date of Expiry', e.date_of_expiry) +
+                row('Place Issued By', e.place_issued_by);
+        }
+
+        if (t === 'PAN') {
+            rows = row('Full Name', e.full_name) +
+                row('Date of Birth', e.dob) +
+                row('PAN No', e.pan_no || item.value, 'pan');
+        }
+
+        if (t === 'Voter ID') {
+            rows = row('Full Name', e.full_name) +
+                row('Date of Birth', e.dob) +
+                row('Phone No', e.phone) +
+                row('EPIC No', e.epic_no || item.value, 'epic');
+        }
+
+        if (t === 'Driving License') {
+            rows = row('Full Name', e.full_name) +
+                row('DL Number', e.dl_no || item.value, 'dl') +
+                row('Date of Issue', e.date_of_issue) +
+                row('Date of Expiry', e.date_of_expiry);
+        }
+
+        if (t === 'Other') {
+            rows = row('Title', e.title || item.label) +
+                row('ID Number', e.other_no || item.value, 'other');
+        }
+
+        if (!rows) {
+            rows = row('ID Number', item.value, 'id') + row('Name', item.label);
+        }
+
+        document.getElementById('detailCard').innerHTML = `
+        <div class="detail-head">
+            <h3>${icons[t] || '📌'} ${esc(t)}</h3>
+            <p>${esc(mainName(item))}</p>
+        </div>
+        <div class="detail-list">${rows}</div>
+    `;
+    }
+
+    function toggleSecret(key) {
+        secretVisible[key] = !secretVisible[key];
+        renderDetails();
+    }
+
+    function copyText(text) {
+        navigator.clipboard.writeText(text).then(() => showToast('Copied', 'success'));
+    }
+
+    function closeDetails() {
+        document.getElementById('detailsModal').classList.remove('show');
+        currentDetailId = null;
+        secretVisible = {};
+    }
+
+    function deleteItem(id) {
+        if (!confirm('Delete this identity document?')) return;
+
+        fetch('/identity/delete/' + id, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': csrf }
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    showToast('Deleted', 'success');
+                    loadItems();
+                } else {
+                    showToast(d.error || 'Delete failed', 'error');
+                }
+            });
+    }
+
+    function toggleFav(id) {
+        fetch('/identity/favorite/' + id, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf }
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) loadItems();
+            });
+    }
+
+    document.getElementById('searchId').addEventListener('input', renderItems);
+
+    document.getElementById('addModal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeAdd();
+    });
+
+    document.getElementById('editModal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeEdit();
+    });
+
+    document.getElementById('detailsModal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeDetails();
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            closeAdd();
+            closeEdit();
+            closeDetails();
+        }
+    });
+
+    loadItems();
+</script>
+{% endblock %}

@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Private Vault{% endblock %}</title>
+
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-body: #000000;
+            --bg-surface: #0a0a0a;
+            --bg-card: #111111;
+            --bg-card-hover: #1a1a1a;
+            --bg-input: #0a0a0a;
+            --border: #1a1a1a;
+            --border-light: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #888888;
+            --text-dim: #555555;
+            --accent: #ffffff;
+            --accent-hover: #cccccc;
+            --accent-bg: rgba(255, 255, 255, 0.05);
+            --success: #22c55e;
+            --warning: #eab308;
+            --danger: #ef4444;
+            --radius: 8px;
+            --radius-lg: 12px;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            --transition: all 0.2s ease;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+        }
+
+        /* ==========================================================
+   SIDEBAR
+========================================================== */
+
+        .sidebar {
+            width: 220px;
+            height: 100vh;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            overflow: hidden;
+        }
+
+        /* =========================
+   Brand
+========================= */
+
+        .sidebar .brand {
+            height: 96px;
+
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            padding: 0 18px;
+
+            border-bottom: 1px solid var(--border);
+
+            flex-shrink: 0;
+        }
+
+        .sidebar .brand .logo {
+            font-size: 28px;
+        }
+
+        .sidebar .brand .name {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+
+        .page-content {
+            flex: 1;
+            overflow: auto;
+            padding: 24px 32px 32px;
+        }
+
+        /* =========================
+   Navigation
+========================= */
+
+        .sidebar .nav {
+
+            flex: 1;
+
+            list-style: none;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+
+            padding: 10px;
+
+            overflow: hidden;
+        }
+
+        .sidebar .nav li {
+            margin: 0;
+        }
+
+        .sidebar .nav li a {
+
+            height: 46px;
+
+            display: flex;
+            align-items: center;
+
+            gap: 12px;
+
+            padding: 0 14px;
+
+            border-radius: 10px;
+
+            color: var(--text-muted);
+
+            text-decoration: none;
+
+            transition: .2s;
+        }
+
+        .sidebar .nav li a:hover {
+
+            background: var(--bg-card);
+
+            color: var(--text-primary);
+        }
+
+        .sidebar .nav li.active a {
+
+            background: var(--accent-bg);
+
+            color: var(--accent);
+        }
+
+        .sidebar .nav .ico {
+
+            width: 22px;
+
+            text-align: center;
+
+            font-size: 17px;
+
+            flex-shrink: 0;
+        }
+
+        /* Hide section titles */
+
+        .sidebar .nav .section {
+            display: none;
+        }
+
+        /* =========================
+   Protected Card
+========================= */
+
+        .sidebar-status {
+
+            margin: 10px;
+
+            padding: 14px;
+
+            border: 1px solid var(--border);
+
+            border-radius: 12px;
+
+            background: var(--bg-card);
+
+            flex-shrink: 0;
+        }
+
+        .status-header {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            margin-bottom: 12px;
+        }
+
+        .status-icon {
+
+            width: 38px;
+            height: 38px;
+
+            border-radius: 10px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: rgba(34, 197, 94, .12);
+
+            color: var(--success);
+
+            font-size: 18px;
+        }
+
+        .status-text h4 {
+
+            font-size: 14px;
+
+            margin-bottom: 2px;
+        }
+
+        .status-text span {
+
+            font-size: 11px;
+
+            color: var(--text-muted);
+        }
+
+        .status-progress {
+
+            height: 6px;
+
+            background: var(--bg-input);
+
+            border-radius: 999px;
+
+            overflow: hidden;
+
+            margin-bottom: 10px;
+        }
+
+        .status-bar {
+
+            width: 100%;
+            height: 100%;
+
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+        }
+
+        .status-footer {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            font-size: 11px;
+
+            color: var(--text-muted);
+        }
+
+        .status-footer .online {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 5px;
+        }
+
+        .status-footer .dot {
+
+            width: 7px;
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: #22c55e;
+        }
+
+        /* Old footer */
+
+        .sidebar .footer {
+            display: none;
+        }
+
+        /* ============================================================
+           MAIN CONTENT
+           ============================================================ */
+        .main {
+            flex: 1;
+            min-height: 100vh;
+
+            display: flex;
+            flex-direction: column;
+
+            padding: 0;
+
+            overflow: hidden;
+        }
+
+        /* Top Bar */
+        .topbar {
+            height: 96px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            padding: 0 32px;
+
+            border-bottom: 1px solid var(--border);
+
+            flex-shrink: 0;
+        }
+
+        .topbar .left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .topbar .left .menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .topbar .left .page h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .topbar .left .page p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .topbar .right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .topbar .right .user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .topbar .right .user .name {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .topbar .right .user .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .topbar .right .logout {
+            padding: 5px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 12px;
+            transition: var(--transition);
+        }
+
+        .topbar .right .logout:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        /* Overlay for mobile */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 99;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+
+        /* ============================================================
+           TOAST
+           ============================================================ */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 9999;
+            max-width: 380px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            border: 1px solid;
+            animation: slideIn 0.25s ease;
+        }
+
+        .toast.success {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            border-color: rgba(34, 197, 94, 0.2);
+        }
+
+        .toast.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .toast.warning {
+            background: rgba(234, 179, 8, 0.1);
+            color: var(--warning);
+            border-color: rgba(234, 179, 8, 0.2);
+        }
+
+        .toast.info {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                width: 260px;
+                z-index: 100;
+                height: 100vh;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main {
+                padding: 12px 16px 32px;
+            }
+
+            .topbar .left .menu-btn {
+                display: block;
+            }
+
+            .topbar .right .user .name {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main {
+                padding: 10px 12px 24px;
+            }
+
+            .topbar .left .page h1 {
+                font-size: 17px;
+            }
+        }
+    </style>
+
+    {% block extra_styles %}{% endblock %}
+</head>
+
+<body>
+    {% if session.get('user_id') and session.get('pin_verified') %}
+    <!-- ===== OVERLAY ===== -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+        <!-- Brand -->
+        <div class="brand">
+            <span class="logo">🔐</span>
+            <span class="name">Vault<span>.</span></span>
+        </div>
+
+        <!-- Navigation -->
+        <ul class="nav">
+
+            <li class="{{ 'active' if active_page == 'dashboard' else '' }}">
+                <a href="/dashboard">
+                    <span class="ico">📊</span>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+
+            <li class="{{ 'active' if active_page == 'identity' else '' }}">
+                <a href="/identity">
+                    <span class="ico">🪪</span>
+                    <span>Identity</span>
+                </a>
+            </li>
+
+            <li class="{{ 'active' if active_page == 'banking' else '' }}">
+                <a href="/banking">
+                    <span class="ico">🏦</span>
+                    <span>Banking</span>
+                </a>
+            </li>
+
+            <li class="{{ 'active' if active_page == 'passwords' else '' }}">
+                <a href="/passwords">
+                    <span class="ico">🔑</span>
+                    <span>Passwords</span>
+                </a>
+            </li>
+
+            <li class="{{ 'active' if active_page == 'notes' else '' }}">
+                <a href="/notes">
+                    <span class="ico">📝</span>
+                    <span>Notes</span>
+                </a>
+            </li>
+
+            <li class="{{ 'active' if active_page == 'documents' else '' }}">
+                <a href="/documents">
+                    <span class="ico">📄</span>
+                    <span>Documents</span>
+                </a>
+            </li>
+
+            <li class="{{ 'active' if active_page == 'backup' else '' }}">
+                <a href="/backup">
+                    <span class="ico">💾</span>
+                    <span>Backup</span>
+                </a>
+            </li>
+
+            <li class="{{ 'active' if active_page == 'activity' else '' }}">
+                <a href="/activity">
+                    <span class="ico">📋</span>
+                    <span>Activity</span>
+                </a>
+            </li>
+
+            <li class="{{ 'active' if active_page == 'security' else '' }}">
+                <a href="/security">
+                    <span class="ico">🔒</span>
+                    <span>Security</span>
+                </a>
+            </li>
+
+            <li class="{{ 'active' if active_page == 'settings' else '' }}">
+                <a href="/settings">
+                    <span class="ico">⚙️</span>
+                    <span>Settings</span>
+                </a>
+            </li>
+
+        </ul>
+        <!-- Footer - Fixed Bottom -->
+        <div class="sidebar-status">
+
+            <div class="status-header">
+                <div class="status-icon">🛡️</div>
+
+                <div class="status-text">
+                    <h4>Protected</h4>
+                    <span>Vault is secure</span>
+                </div>
+            </div>
+
+            <div class="status-progress">
+                <div class="status-bar"></div>
+            </div>
+
+            <div class="status-footer">
+                <span>256-bit Encryption</span>
+                <span class="online">
+                    <span class="dot"></span>
+                    Active
+                </span>
+            </div>
+
+        </div>
+    </aside>
+
+    <!-- ===== MAIN ===== -->
+    <main class="main">
+        <header class="topbar">
+            <div class="left">
+                <button class="menu-btn" id="menuBtn">☰</button>
+                <div class="page">
+                    <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                    <p>{% block page_subtitle %}Welcome back, {{ user.full_name if user else 'User' }}{% endblock %}</p>
+                </div>
+            </div>
+            <div class="right">
+                <div class="user">
+                    <span class="name">{{ user.full_name if user else 'Admin' }}</span>
+                    <span class="avatar">{{ (user.full_name[0] if user and user.full_name else 'A')|upper }}</span>
+                </div>
+                <button class="logout" onclick="doLogout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="page-content">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <script>
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        if (menuBtn) {
+            menuBtn.addEventListener('click', function () {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('show');
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', function () {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+            });
+        }
+
+        function doLogout() {
+            if (confirm('Logout?')) {
+                fetch('/auth/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/auth/login')
+                    .catch(() => window.location.href = '/auth/login');
+            }
+        }
+
+        function showToast(msg, type) {
+            const el = document.createElement('div');
+            el.className = 'toast ' + (type || 'info');
+            el.textContent = msg;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 3500);
+        }
+    </script>
+
+    {% else %}
+    <!-- Not logged in -->
+    <script>
+        window.location.href = '/auth/login';
+    </script>
+    {% endif %}
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>
