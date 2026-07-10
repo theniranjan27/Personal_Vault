@@ -139,6 +139,9 @@ def sanitize_input(input_string: str, max_length: int = 500) -> str:
     if not input_string:
         return ""
     
-    sanitized = re.sub(r'[<>]', '', input_string)
+    # Remove script tags and their contents
+    sanitized = re.sub(r'<script\b[^>]*>([\s\S]*?)<\/script>', '', input_string, flags=re.IGNORECASE)
+    # Remove HTML tags
+    sanitized = re.sub(r'<[^>]*>', '', sanitized)
     sanitized = sanitized[:max_length]
     return sanitized.strip()

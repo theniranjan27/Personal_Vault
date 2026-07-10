@@ -7,10 +7,14 @@ import os
 
 @pytest.fixture
 def app():
-    app = create_app()
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    app.config['WTF_CSRF_ENABLED'] = False
+    from config.config import Config
+    class TestConfig(Config):
+        TESTING = True
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+        WTF_CSRF_ENABLED = False
+        SQLALCHEMY_ENGINE_OPTIONS = {}
+
+    app = create_app(TestConfig)
     
     with app.app_context():
         db.create_all()

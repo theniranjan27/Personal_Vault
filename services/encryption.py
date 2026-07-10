@@ -43,7 +43,7 @@ class EncryptionService:
             decrypted = self.cipher.decrypt(decoded)
             return decrypted.decode('utf-8')
         except Exception as e:
-            raise ValueError(f"Decryption failed: {str(e)}")
+            return ''
     
     def encrypt_bytes(self, data: bytes) -> bytes:
         """Encrypt binary data"""

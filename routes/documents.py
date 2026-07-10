@@ -16,7 +16,9 @@ documents_bp = Blueprint('documents', __name__)
 @login_required_redirect
 def index():
     """Document vault page"""
-    return render_template('vaults/documents.html')
+    from models.user import User
+    user = User.query.get(session['user_id'])
+    return render_template('vaults/documents.html', active_page='documents', user=user)
 
 
 @documents_bp.route('/list')
@@ -89,8 +91,8 @@ def upload_file():
         
         audit_service.log_action(
             user_id=user_id,
-            action='upload_file',
-            details={'filename': file_info['filename']}
+            action='upload',
+            details={'file_id': vault_file.id, 'filename': file_info['filename']}
         )
         
         return jsonify({
@@ -118,8 +120,40 @@ def delete_file(file_id):
     
     audit_service.log_action(
         user_id=user_id,
-        action='delete_file',
+        action='delete',
         details={'file_id': file_id, 'filename': file.filename}
     )
     
     return jsonify({'success': True})
+
+
+@documents_bp.route('/download/<int:file_id>', methods=['GET'])
+@login_required
+def download_file(file_id):
+    """Download and decrypt document"""
+    user_id = session['user_id']
+    
+    file = VaultFile.query.filter_by(id=file_id, user_id=user_id).first()
+    if not file:
+        return jsonify({'error': 'File not found'}), 404
+        
+    try:
+        # Decrypt binary content
+        decrypted_data = encryption_service.decrypt_bytes(file.encrypted_data)
+        
+        audit_service.log_action(
+            user_id=user_id,
+            action='download',
+            details={'file_id': file_id, 'filename': file.filename}
+        )
+        
+        # Send decrypted data back
+        import io
+        return send_file(
+            io.BytesIO(decrypted_data),
+            mimetype=file.mime_type or 'application/octet-stream',
+            as_attachment=True,
+            download_name=file.filename
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

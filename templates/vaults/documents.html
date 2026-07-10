@@ -1,503 +1,249 @@
 {% extends "base.html" %}
 
-{% block title %}Document Vault - Private Vault{% endblock %}
+{% block page_title %}Document Vault{% endblock %}
+{% block page_subtitle %}Securely store and manage your encrypted documents and files{% endblock %}
 
 {% block content %}
 <style>
-    .vault-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 24px;
+    .docs-wrap {
+        display: grid;
+        gap: 14px;
     }
 
-    .vault-header {
+    .docs-header {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-        gap: 12px;
     }
 
-    .vault-header h1 {
-        font-size: 28px;
-        color: #eef4ff;
+    .docs-header h2 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 20px;
     }
 
-    .vault-header .subtitle {
-        color: #7b96c0;
-        font-size: 14px;
-    }
-
-    .vault-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .btn {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .btn-primary {
-        background: #2a6bff;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background: #3f7aff;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 16px rgba(42, 107, 255, 0.3);
-    }
-
-    .btn-secondary {
-        background: #1f3147;
-        color: #b3ceff;
-    }
-
-    .btn-secondary:hover {
-        background: #2a405a;
-    }
-
-    .search-container {
-        margin-bottom: 24px;
-        position: relative;
-    }
-
-    .search-container input {
-        width: 100%;
-        padding: 12px 16px 12px 44px;
-        background: #0b1422;
-        border: 1px solid #2a3f5c;
-        border-radius: 12px;
-        color: #f0f5ff;
-        font-size: 15px;
-        transition: all 0.2s;
-    }
-
-    .search-container input:focus {
-        border-color: #4a85ff;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(42, 107, 255, 0.1);
-    }
-
-    .search-container .search-icon {
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #5a7a9a;
-        font-size: 18px;
-    }
-
-    .vault-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 16px;
-    }
-
-    .vault-card {
-        background: #0f1a2b;
-        border: 1px solid #1a2a40;
-        border-radius: 14px;
-        padding: 16px;
-        transition: all 0.2s;
-        position: relative;
-    }
-
-    .vault-card:hover {
-        border-color: #2a3f5c;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    }
-
-    .vault-card .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 10px;
-    }
-
-    .vault-card .card-title {
-        font-size: 16px;
-        font-weight: 600;
-        color: #eef4ff;
-    }
-
-    .vault-card .card-badges {
-        display: flex;
-        gap: 4px;
-        flex-wrap: wrap;
-    }
-
-    .vault-card .badge {
-        font-size: 10px;
-        padding: 2px 8px;
-        border-radius: 10px;
-        font-weight: 500;
-    }
-
-    .badge-favorite {
-        background: rgba(255, 193, 7, 0.15);
-        color: #ffc107;
-    }
-
-    .badge-document {
-        background: rgba(42, 107, 255, 0.15);
-        color: #4a85ff;
-    }
-
-    .vault-card .file-icon {
-        font-size: 48px;
-        text-align: center;
-        padding: 16px 0;
-    }
-
-    .vault-card .file-info {
-        font-size: 13px;
-        color: #7b96c0;
-        text-align: center;
-        margin-bottom: 12px;
-    }
-
-    .vault-card .file-info .size {
-        margin-left: 8px;
-        color: #5a7a9a;
-    }
-
-    .vault-card .card-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .btn-sm {
-        padding: 4px 12px;
-        border: none;
-        border-radius: 6px;
+    .docs-header p {
+        margin: 4px 0 0;
+        color: var(--text-muted);
         font-size: 12px;
+    }
+
+    .upload-btn {
+        padding: 9px 15px;
+        border-radius: var(--radius);
+        border: 1px solid var(--accent);
+        background: rgba(108, 140, 255, .12);
+        color: var(--accent);
+        font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: var(--transition);
     }
 
-    .btn-sm-primary {
-        background: rgba(42, 107, 255, 0.15);
-        color: #4a85ff;
+    .upload-btn:hover {
+        background: rgba(108, 140, 255, .25);
     }
 
-    .btn-sm-primary:hover {
-        background: rgba(42, 107, 255, 0.25);
-    }
-
-    .btn-sm-success {
-        background: rgba(76, 175, 80, 0.15);
-        color: #4caf50;
-    }
-
-    .btn-sm-success:hover {
-        background: rgba(76, 175, 80, 0.25);
-    }
-
-    .btn-sm-danger {
-        background: rgba(239, 83, 80, 0.15);
-        color: #ef5350;
-    }
-
-    .btn-sm-danger:hover {
-        background: rgba(239, 83, 80, 0.25);
-    }
-
-    .empty-state {
-        grid-column: 1 / -1;
+    .upload-dropzone {
+        border: 2px dashed var(--border-light);
+        border-radius: var(--radius-lg);
+        background: var(--bg-card);
+        padding: 30px;
         text-align: center;
-        padding: 60px 20px;
-        color: #5a7a9a;
+        cursor: pointer;
+        transition: var(--transition);
     }
 
-    .empty-state .empty-icon {
-        font-size: 64px;
-        margin-bottom: 16px;
+    .upload-dropzone:hover {
+        border-color: var(--accent);
+        background: var(--bg-card-hover);
     }
 
-    .empty-state h3 {
-        color: #7b96c0;
+    .upload-dropzone .icon {
+        font-size: 40px;
         margin-bottom: 8px;
     }
 
-    .empty-state p {
-        color: #5a7a9a;
+    .upload-dropzone h3 {
+        color: var(--text-primary);
+        font-size: 15px;
+        font-weight: 600;
     }
 
-    .upload-zone {
-        border: 2px dashed #2a3f5c;
-        border-radius: 14px;
-        padding: 40px;
+    .upload-dropzone p {
+        color: var(--text-muted);
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .docs-search input {
+        width: 100%;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        border-radius: var(--radius);
+        padding: 10px 13px;
+        outline: none;
+    }
+
+    .docs-search input:focus {
+        border-color: var(--border-light);
+    }
+
+    .docs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px;
+    }
+
+    .docs-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 13px;
         text-align: center;
-        margin-bottom: 24px;
-        transition: all 0.2s;
-        cursor: pointer;
+        position: relative;
+        transition: var(--transition);
     }
 
-    .upload-zone:hover {
-        border-color: #4a85ff;
-        background: rgba(42, 107, 255, 0.05);
+    .docs-card:hover {
+        border-color: var(--border-light);
+        transform: translateY(-2px);
     }
 
-    .upload-zone .icon {
-        font-size: 48px;
+    .file-icon-wrap {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin: 10px auto 14px;
     }
 
-    .upload-zone h3 {
-        color: #7b96c0;
-        margin-top: 12px;
-    }
-
-    .upload-zone p {
-        color: #5a7a9a;
+    .file-name {
+        color: var(--text-primary);
         font-size: 14px;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 4px;
     }
 
-    @media (max-width: 600px) {
-        .vault-container {
-            padding: 16px;
-        }
+    .file-size {
+        color: var(--text-muted);
+        font-size: 11px;
+        margin-top: 4px;
+        margin-bottom: 14px;
+    }
 
-        .vault-header {
-            flex-direction: column;
-            align-items: stretch;
-        }
+    .docs-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+    }
 
-        .vault-actions {
-            justify-content: stretch;
-        }
+    .docs-actions button {
+        border: none;
+        border-radius: var(--radius);
+        padding: 7px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
 
-        .vault-actions .btn {
-            flex: 1;
-            text-align: center;
-        }
+    .dl-btn {
+        background: rgba(108, 140, 255, .12);
+        color: var(--accent);
+    }
 
-        .vault-grid {
-            grid-template-columns: 1fr;
-        }
+    .del-btn {
+        background: rgba(248, 113, 113, .12);
+        color: var(--danger);
+    }
+
+    .docs-empty {
+        grid-column: 1/-1;
+        text-align: center;
+        padding: 35px;
+        border: 1px dashed var(--border);
+        border-radius: var(--radius-lg);
+        color: var(--text-muted);
+        background: var(--bg-card);
     }
 </style>
 
-<div class="vault-container">
-    <div class="vault-header">
+<div class="docs-wrap">
+    <div class="docs-header">
         <div>
-            <h1>📄 Document Vault</h1>
-            <div class="subtitle">Store and manage your encrypted documents securely</div>
+            <h2>📄 Document Vault</h2>
+            <p>Upload files securely. Everything is encrypted locally before database storage.</p>
         </div>
-        <div class="vault-actions">
-            <button class="btn btn-primary" onclick="uploadFile()">📤 Upload Document</button>
-            <button class="btn btn-secondary" onclick="exportItems()">📥 Export</button>
-        </div>
+        <button class="upload-btn" onclick="triggerUpload()">Upload File</button>
     </div>
 
-    <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+    <div class="upload-dropzone" onclick="triggerUpload()">
         <div class="icon">📁</div>
-        <h3>Drop your files here or click to upload</h3>
-        <p>All files are encrypted before storage. Max size: 50MB</p>
-        <input type="file" id="fileInput" multiple style="display: none;" onchange="uploadFiles(this.files)">
+        <h3>Select a file or drop here to upload</h3>
+        <p>Decryption key is stored in your private vault context. Max file size: 50MB.</p>
+        <input type="file" id="fileInput" style="display: none;" onchange="handleFiles(this.files)">
     </div>
 
-    <div class="search-container">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchDocuments" placeholder="Search documents..." oninput="filterItems()">
+    <div class="docs-search">
+        <input type="text" id="searchDoc" placeholder="Search documents...">
     </div>
 
-    <div id="documentsGrid" class="vault-grid">
-        <div class="empty-state">
-            <div class="empty-icon">📄</div>
-            <h3>No documents uploaded</h3>
-            <p>Upload your first encrypted document</p>
-            <button class="btn btn-primary" onclick="uploadFile()" style="margin-top: 16px;">Upload Document</button>
-        </div>
-    </div>
+    <div class="docs-grid" id="docList"></div>
 </div>
 
 <script>
-    let documentItems = [];
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    let allItems = [];
 
-    document.addEventListener('DOMContentLoaded', function () {
-        loadItems();
-    });
+    const fileIcons = {
+        'pdf': '📕',
+        'doc': '📘',
+        'docx': '📘',
+        'xls': '📗',
+        'xlsx': '📗',
+        'ppt': '📙',
+        'pptx': '📙',
+        'jpg': '🖼️',
+        'jpeg': '🖼️',
+        'png': '🖼️',
+        'gif': '🖼️',
+        'zip': '📦',
+        'rar': '📦',
+        '7z': '📦',
+        'txt': '📄',
+        'json': '📄'
+    };
 
     function loadItems() {
         fetch('/documents/list')
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
-                documentItems = data.items || [];
-                renderItems(documentItems);
-            })
-            .catch(error => {
-                console.error('Error loading documents:', error);
-                showNotification('Error loading documents', 'error');
+                allItems = data.items || [];
+                renderItems();
             });
     }
 
-    function renderItems(items) {
-        const grid = document.getElementById('documentsGrid');
-
-        if (!items || items.length === 0) {
-            grid.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">📄</div>
-                <h3>No documents found</h3>
-                <p>Upload your first encrypted document</p>
-                <button class="btn btn-primary" onclick="uploadFile()" style="margin-top: 16px;">Upload Document</button>
-            </div>
-        `;
-            return;
-        }
-
-        grid.innerHTML = items.map(item => {
-            const fileIcon = getFileIcon(item.filename);
-            return `
-            <div class="vault-card" data-id="${item.id}">
-                <div class="card-header">
-                    <div class="card-title">${item.filename}</div>
-                    <div class="card-badges">
-                        ${item.is_favorite ? '<span class="badge badge-favorite">⭐ Favorite</span>' : ''}
-                        <span class="badge badge-document">${item.file_type || 'Document'}</span>
-                    </div>
-                </div>
-                <div class="file-icon">${fileIcon}</div>
-                <div class="file-info">
-                    ${item.filename}
-                    <span class="size">(${formatSize(item.file_size)})</span>
-                </div>
-                <div class="card-actions">
-                    <button class="btn-sm btn-sm-primary" onclick="viewItem(${item.id})">👁️ View</button>
-                    <button class="btn-sm btn-sm-success" onclick="downloadFile(${item.id})">📥 Download</button>
-                    <button class="btn-sm btn-sm-danger" onclick="deleteItem(${item.id})">🗑️</button>
-                </div>
-            </div>
-        `;
-        }).join('');
-    }
-
-    function getFileIcon(filename) {
-        const ext = filename.split('.').pop().toLowerCase();
-        const icons = {
-            'pdf': '📕',
-            'doc': '📘',
-            'docx': '📘',
-            'xls': '📗',
-            'xlsx': '📗',
-            'ppt': '📙',
-            'pptx': '📙',
-            'jpg': '🖼️',
-            'jpeg': '🖼️',
-            'png': '🖼️',
-            'gif': '🖼️',
-            'svg': '🖼️',
-            'zip': '📦',
-            'rar': '📦',
-            '7z': '📦',
-            'txt': '📄',
-            'md': '📄',
-            'json': '📄',
-            'xml': '📄'
-        };
-        return icons[ext] || '📄';
-    }
-
-    function filterItems() {
-        const query = document.getElementById('searchDocuments').value.toLowerCase();
-        const filtered = documentItems.filter(item =>
-            item.filename.toLowerCase().includes(query)
-        );
-        renderItems(filtered);
-    }
-
-    function uploadFile() {
-        document.getElementById('fileInput').click();
-    }
-
-    function uploadFiles(files) {
-        if (!files || files.length === 0) return;
-
-        const formData = new FormData();
-        for (let file of files) {
-            formData.append('files', file);
-        }
-
-        showNotification('Uploading files...', 'info');
-
-        fetch('/documents/upload', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('Files uploaded successfully!', 'success');
-                    loadItems();
-                } else {
-                    showNotification('Error uploading files: ' + data.error, 'error');
-                }
-            })
-            .catch(error => {
-                showNotification('Error uploading files', 'error');
-                console.error('Error:', error);
-            });
-    }
-
-    function viewItem(id) {
-        window.location.href = `/documents/view/${id}`;
-    }
-
-    function downloadFile(id) {
-        window.location.href = `/documents/download/${id}`;
-    }
-
-    function deleteItem(id) {
-        if (confirm('Are you sure you want to delete this document?')) {
-            fetch(`/documents/delete/${id}`, {
-                method: 'DELETE'
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showNotification('Document deleted successfully', 'success');
-                        loadItems();
-                    } else {
-                        showNotification('Error deleting document', 'error');
-                    }
-                })
-                .catch(error => {
-                    showNotification('Error deleting document', 'error');
-                    console.error('Error:', error);
-                });
-        }
-    }
-
-    function exportItems() {
-        fetch('/documents/export')
-            .then(response => response.blob())
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `documents_${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
-                showNotification('Documents exported successfully!', 'success');
-            })
-            .catch(error => {
-                showNotification('Error exporting documents', 'error');
-                console.error('Error:', error);
-            });
+    function esc(s) {
+        if (!s) return '';
+        return s.toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     function formatSize(bytes) {
@@ -507,14 +253,119 @@
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
-    function showNotification(message, type) {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        setTimeout(() => {
-            notification.remove();
-        }, 4000);
+    function renderItems() {
+        const query = document.getElementById('searchDoc').value.toLowerCase();
+        const grid = document.getElementById('docList');
+        grid.innerHTML = '';
+
+        const filtered = allItems.filter(item => item.filename.toLowerCase().includes(query));
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '<div class="docs-empty">No documents found</div>';
+            return;
+        }
+
+        filtered.forEach(item => {
+            const ext = item.filename.split('.').pop().toLowerCase();
+            const icon = fileIcons[ext] || '📄';
+
+            const card = document.createElement('div');
+            card.className = 'docs-card';
+            card.innerHTML = `
+                <div class="file-icon-wrap">${icon}</div>
+                <div class="file-name" title="${esc(item.filename)}">${esc(item.filename)}</div>
+                <div class="file-size">${formatSize(item.file_size)}</div>
+                <div class="docs-actions">
+                    <button class="dl-btn" onclick="downloadFile(${item.id})">Download</button>
+                    <button class="del-btn" onclick="deleteFile(${item.id})">Delete</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
     }
+
+    // Trigger file selection dialog
+    function triggerUpload() {
+        document.getElementById('fileInput').click();
+    }
+
+    // Handle files selected via input
+    function handleFiles(files) {
+        if (!files || files.length === 0) return;
+        const file = files[0];
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        showToast('Uploading and encrypting file...', 'info');
+
+        fetch('/documents/upload', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf },
+            body: formData
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    showToast('File uploaded successfully', 'success');
+                    loadItems();
+                } else {
+                    showToast(d.error || 'Upload failed', 'error');
+                }
+            })
+            .catch(() => showToast('Error uploading file', 'error'));
+    }
+
+    function downloadFile(id) {
+        showToast('Downloading and decrypting file...', 'info');
+        window.location.href = '/documents/download/' + id;
+    }
+
+    function deleteFile(id) {
+        if (!confirm('Are you sure you want to delete this document?')) return;
+
+        fetch('/documents/delete/' + id, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': csrf }
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    showToast('Document deleted', 'success');
+                    loadItems();
+                } else {
+                    showToast(d.error || 'Delete failed', 'error');
+                }
+            });
+    }
+
+    // Drag and Drop implementation
+    const dropzone = document.querySelector('.upload-dropzone');
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = 'var(--accent)';
+            dropzone.style.background = 'var(--bg-card-hover)';
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = 'var(--border-light)';
+            dropzone.style.background = 'var(--bg-card)';
+        }, false);
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    });
+
+    document.getElementById('searchDoc').addEventListener('input', renderItems);
+
+    loadItems();
 </script>
 {% endblock %}

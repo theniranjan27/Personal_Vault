@@ -389,6 +389,7 @@
 
         navigator.clipboard.writeText(value).then(() => {
             showNotification('Copied to clipboard!', 'success');
+            logCopy(itemId);
         }).catch(() => {
             // Fallback
             const textarea = document.createElement('textarea');
@@ -398,14 +399,35 @@
             document.execCommand('copy');
             document.body.removeChild(textarea);
             showNotification('Copied to clipboard!', 'success');
+            logCopy(itemId);
         });
     }
 
     function logReveal(id) {
         if (!id) return;
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         fetch(`/activity/log-reveal/${id}`, {
-            method: 'POST'
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf }
         }).catch(error => console.error('Error logging reveal:', error));
+    }
+
+    function logCopy(id) {
+        if (!id) return;
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        fetch(`/activity/log-copy/${id}`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf }
+        }).catch(error => console.error('Error logging copy:', error));
+    }
+
+    function logView(id) {
+        if (!id) return;
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        fetch(`/activity/log-view/${id}`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf }
+        }).catch(error => console.error('Error logging view:', error));
     }
 
     function editItem() {
@@ -466,6 +488,10 @@
         setTimeout(() => {
             notification.remove();
         }, 3000);
+    }
+    // Trigger view log on load
+    if (itemId) {
+        logView(itemId);
     }
 </script>
 {% endblock %}

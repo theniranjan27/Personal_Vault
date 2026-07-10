@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 def password_service():
     return PasswordService()
 
-def test_create_user(password_service):
+def test_create_user(app, password_service):
     user = User(
         username='testuser',
         email='test@example.com',
@@ -32,7 +32,7 @@ def test_create_user(password_service):
     assert user.is_active is True
     assert user.created_at is not None
 
-def test_user_relationships(password_service):
+def test_user_relationships(app, password_service):
     user = User(
         username='testuser2',
         email='test2@example.com',
@@ -55,17 +55,19 @@ def test_user_relationships(password_service):
     assert len(user.vault_items) == 1
     assert user.vault_items[0].label == 'Aadhaar'
 
-def test_vault_item_encryption():
+def test_vault_item_encryption(app):
     item = VaultItem(
         user_id=1,
         category='identity',
         label='PAN',
         encrypted_value='encrypted_pan_data'
     )
+    db.session.add(item)
+    db.session.commit()
     assert item.encrypted_value == 'encrypted_pan_data'
     assert item.created_at is not None
 
-def test_vault_file():
+def test_vault_file(app):
     file = VaultFile(
         user_id=1,
         filename='test.pdf',
@@ -74,22 +76,26 @@ def test_vault_file():
         mime_type='application/pdf',
         original_filename='document.pdf'
     )
+    db.session.add(file)
+    db.session.commit()
     assert file.filename == 'test.pdf'
     assert file.file_size == 1024
     assert not file.is_deleted
 
-def test_note():
+def test_note(app):
     note = Note(
         user_id=1,
         title='Test Note',
         content='encrypted_note_content',
         category='Personal'
     )
+    db.session.add(note)
+    db.session.commit()
     assert note.title == 'Test Note'
     assert note.category == 'Personal'
     assert note.is_archived is False
 
-def test_activity_log():
+def test_activity_log(app):
     log = ActivityLog(
         user_id=1,
         action='login',
@@ -97,22 +103,26 @@ def test_activity_log():
         ip_address='127.0.0.1',
         user_agent='Test Agent'
     )
+    db.session.add(log)
+    db.session.commit()
     assert log.action == 'login'
     assert log.ip_address == '127.0.0.1'
     assert log.timestamp is not None
 
-def test_security_setting():
+def test_security_setting(app):
     setting = SecuritySetting(
         user_id=1,
         session_timeout_minutes=15,
         max_login_attempts=5,
         lockout_duration_minutes=30
     )
+    db.session.add(setting)
+    db.session.commit()
     assert setting.session_timeout_minutes == 15
     assert setting.max_login_attempts == 5
     assert setting.two_factor_enabled is False
 
-def test_user_login_attempts(password_service):
+def test_user_login_attempts(app, password_service):
     user = User(
         username='testuser3',
         email='test3@example.com',
@@ -127,7 +137,7 @@ def test_user_login_attempts(password_service):
     assert user.failed_attempts == 3
     assert user.is_locked() is False
 
-def test_user_lockout(password_service):
+def test_user_lockout(app, password_service):
     user = User(
         username='testuser4',
         email='test4@example.com',
@@ -142,7 +152,7 @@ def test_user_lockout(password_service):
     
     assert user.is_locked() is True
 
-def test_vault_item_last_accessed():
+def test_vault_item_last_accessed(app):
     item = VaultItem(
         user_id=1,
         category='identity',

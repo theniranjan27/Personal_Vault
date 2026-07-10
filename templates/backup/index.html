@@ -1,47 +1,378 @@
 {% extends "base.html" %}
 
-{% block title %}Backup Center - Private Vault{% endblock %}
+{% block page_title %}Backup Center{% endblock %}
+{% block page_subtitle %}Manage, create, download, and restore encrypted backups{% endblock %}
 
 {% block content %}
-<div class="backup-container">
-    <div class="page-header">
-        <h1>💾 Backup Center</h1>
-        <p class="subtitle">Manage your encrypted backups securely</p>
+<style>
+    .backup-wrap {
+        display: grid;
+        gap: 14px;
+    }
+
+    .backup-header {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .backup-header h2 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 20px;
+    }
+
+    .backup-header p {
+        margin: 4px 0 0;
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    .actions-group {
+        display: flex;
+        gap: 9px;
+    }
+
+    .backup-btn {
+        padding: 9px 15px;
+        border-radius: var(--radius);
+        border: 1px solid var(--accent);
+        background: rgba(108, 140, 255, .12);
+        color: var(--accent);
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .backup-btn:hover {
+        background: rgba(108, 140, 255, .25);
+    }
+
+    .backup-btn.sec {
+        border-color: var(--border-light);
+        background: var(--bg-input);
+        color: var(--text-primary);
+    }
+
+    .backup-btn.sec:hover {
+        background: var(--bg-card-hover);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 14px;
+    }
+
+    .stat-lbl {
+        color: var(--text-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .stat-val {
+        color: var(--text-primary);
+        font-size: 19px;
+        font-weight: 800;
+        margin-top: 6px;
+    }
+
+    .history-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+    }
+
+    .history-card h3 {
+        margin: 0 0 14px;
+        color: var(--text-primary);
+        font-size: 16px;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    table.backup-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    table.backup-table th {
+        color: var(--text-muted);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    table.backup-table td {
+        color: var(--text-primary);
+        font-size: 13px;
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 3px 7px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .status-badge.verified {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+    }
+
+    .status-badge.failed {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+    }
+
+    .status-badge.corrupted {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+    }
+
+    .status-badge.not-verified {
+        background: rgba(108, 140, 255, 0.15);
+        color: var(--accent);
+    }
+
+    .row-actions {
+        display: flex;
+        gap: 7px;
+    }
+
+    .row-actions button {
+        border: none;
+        border-radius: var(--radius);
+        padding: 5px 9px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .dl-btn {
+        background: rgba(108, 140, 255, .12);
+        color: var(--accent);
+    }
+
+    .rest-btn {
+        background: rgba(16, 185, 129, .12);
+        color: #10b981;
+    }
+
+    .verify-btn {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+    }
+
+    .verify-btn:hover {
+        background: rgba(245, 158, 11, 0.25);
+    }
+
+    .del-btn {
+        background: rgba(239, 68, 68, .12);
+        color: var(--danger);
+    }
+
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, .82);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-overlay.show {
+        display: flex;
+    }
+
+    .modal-box {
+        width: 100%;
+        max-width: 480px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 22px;
+        position: relative;
+    }
+
+    .modal-box h2 {
+        margin: 0 0 15px;
+        color: var(--text-primary);
+        font-size: 18px;
+    }
+
+    .modal-box p {
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.5;
+        margin-top: 0;
+        margin-bottom: 12px;
+    }
+
+    .warning-box {
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        color: #f87171;
+        font-size: 12px;
+        margin-bottom: 15px;
+    }
+
+    .x-close {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 22px;
+        cursor: pointer;
+    }
+
+    .x-close:hover {
+        color: var(--danger);
+    }
+
+    .field {
+        margin-bottom: 12px;
+    }
+
+    .field label {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+
+    .field input, .field select {
+        width: 100%;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        border-radius: var(--radius);
+        padding: 9px 11px;
+        outline: none;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 9px;
+        margin-top: 16px;
+        padding-top: 15px;
+        border-top: 1px solid var(--border);
+    }
+
+    .modal-actions button {
+        border: none;
+        border-radius: var(--radius);
+        padding: 8px 15px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .cancel-btn {
+        background: var(--bg-input);
+        color: var(--text-muted);
+    }
+
+    .confirm-btn {
+        background: rgba(108, 140, 255, .14);
+        color: var(--accent);
+        border: 1px solid rgba(108, 140, 255, .35) !important;
+    }
+
+    .confirm-btn.danger {
+        background: rgba(239, 68, 68, 0.12);
+        color: var(--danger);
+        border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    }
+
+    .progress-bar-wrap {
+        background: var(--bg-input);
+        border-radius: var(--radius);
+        height: 8px;
+        width: 100%;
+        overflow: hidden;
+        margin-top: 14px;
+        margin-bottom: 6px;
+    }
+
+    .progress-bar-fill {
+        background: var(--accent);
+        height: 100%;
+        width: 0;
+        transition: width 0.3s ease;
+    }
+</style>
+
+<div class="backup-wrap">
+    <div class="backup-header">
+        <div>
+            <h2>💾 Backup Center</h2>
+            <p>Export all vault records safely or restore a previously saved archive.</p>
+        </div>
+        <div class="actions-group">
+            <button class="backup-btn" onclick="createBackup()">Create Backup</button>
+            <button class="backup-btn sec" onclick="openImport()">Restore Backup</button>
+        </div>
     </div>
 
-    <div class="backup-actions">
-        <button class="btn btn-primary" onclick="createBackup()">
-            <span class="icon">➕</span> Create Backup
-        </button>
-        <button class="btn btn-secondary" onclick="showImportModal()">
-            <span class="icon">📥</span> Import Backup
-        </button>
-    </div>
-
-    <div class="backup-stats">
+    <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-label">Total Backups</div>
-            <div class="stat-value" id="totalBackups">0</div>
+            <div class="stat-lbl">Total Backups</div>
+            <div class="stat-val" id="totalBackups">0</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Last Backup</div>
-            <div class="stat-value" id="lastBackup">Never</div>
+            <div class="stat-lbl">Last Backup</div>
+            <div class="stat-val" id="lastBackup">Never</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Storage Used</div>
-            <div class="stat-value" id="storageUsed">0 MB</div>
+            <div class="stat-lbl">Storage Used</div>
+            <div class="stat-val" id="storageUsed">0 B</div>
         </div>
     </div>
 
-    <div class="backup-history">
-        <h2>Backup History</h2>
-        <div class="table-container">
+    <div class="history-card">
+        <h3>Backup History</h3>
+        <div class="table-responsive">
             <table class="backup-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Date</th>
-                        <th>Size</th>
+                        <th>Backup Name</th>
+                        <th>Created Date</th>
+                        <th>File Size</th>
                         <th>Items</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -49,7 +380,7 @@
                 </thead>
                 <tbody id="backupList">
                     <tr>
-                        <td colspan="6" class="text-center">No backups found</td>
+                        <td colspan="6" style="text-align: center; color: var(--text-muted);">No backups found</td>
                     </tr>
                 </tbody>
             </table>
@@ -57,273 +388,466 @@
     </div>
 </div>
 
-<!-- Import Modal -->
-<div id="importModal" class="modal hidden">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>📥 Import Backup</h3>
-            <button class="close-btn" onclick="closeModal('importModal')">&times;</button>
+<!-- Restore File Modal -->
+<div class="modal-overlay" id="importModal">
+    <div class="modal-box">
+        <button class="x-close" onclick="closeImport()">×</button>
+        <h2>Restore Backup File</h2>
+        <p>Upload a previously exported encrypted backup file (.vault).</p>
+        <form id="importForm" enctype="multipart/form-data">
+            <div class="field">
+                <label>Select Backup File</label>
+                <input type="file" id="backupFile" accept=".vault" required>
+            </div>
+            <div class="field">
+                <label>Restore Mode</label>
+                <select id="importMode" style="width: 100%;">
+                    <option value="merge">Merge with current vault</option>
+                    <option value="replace">Replace current vault</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="closeImport()">Cancel</button>
+                <button type="submit" class="confirm-btn">Restore File</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Restore Saved Backup Modal -->
+<div class="modal-overlay" id="restoreModal">
+    <div class="modal-box">
+        <button class="x-close" onclick="closeRestore()">×</button>
+        <h2>Restore Backup</h2>
+        <div class="warning-box" id="restoreWarningBox">
+            ⚠️ Note: Backup contents will be merged with your current vault records. Existing items with matching names will be updated.
         </div>
-        <div class="modal-body">
-            <form id="importForm" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="backupFile">Select Backup File</label>
-                    <input type="file" id="backupFile" accept=".json,.enc" required>
-                    <small>Only encrypted backup files (.json or .enc) are accepted</small>
-                </div>
-                <div class="form-group">
-                    <label for="importPassword">Backup Password</label>
-                    <input type="password" id="importPassword" placeholder="Enter backup password if encrypted"
-                        required>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('importModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Import</button>
-                </div>
-            </form>
+        <p>Confirm restoration details:</p>
+        <div style="font-size: 13px; color: var(--text-primary); margin-bottom: 15px; display: grid; gap: 5px;">
+            <div><strong>Backup Name:</strong> <span id="restoreId" style="word-break: break-all;"></span></div>
+            <div><strong>Created:</strong> <span id="restoreDate"></span></div>
+            <div><strong>Items:</strong> <span id="restoreItems"></span></div>
+        </div>
+        <div class="field">
+            <label>Restore Mode</label>
+            <select id="restoreMode" onchange="updateRestoreWarning()">
+                <option value="merge">Merge with current vault</option>
+                <option value="replace">Replace current vault</option>
+            </select>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="cancel-btn" onclick="closeRestore()">Cancel</button>
+            <button type="button" class="confirm-btn danger" onclick="confirmRestore()">Confirm Restore</button>
         </div>
     </div>
 </div>
 
-<!-- Restore Modal -->
-<div id="restoreModal" class="modal hidden">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>⚠️ Restore Backup</h3>
-            <button class="close-btn" onclick="closeModal('restoreModal')">&times;</button>
+<!-- Progress Modal -->
+<div class="modal-overlay" id="progressModal">
+    <div class="modal-box" style="text-align: center;">
+        <h2 id="progressTitle">Creating Backup...</h2>
+        <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="backupProgress"></div>
         </div>
-        <div class="modal-body">
-            <p>Are you sure you want to restore this backup?</p>
-            <p class="warning">This will replace all current data with the backup data.</p>
-            <div class="backup-details" id="restoreDetails">
-                <p><strong>Backup ID:</strong> <span id="restoreId"></span></p>
-                <p><strong>Date:</strong> <span id="restoreDate"></span></p>
-                <p><strong>Items:</strong> <span id="restoreItems"></span></p>
+        <p id="progressText" style="margin-top: 10px; margin-bottom: 0;">Initializing...</p>
+    </div>
+</div>
+
+<!-- Reusable Two-Factor Verification Modal -->
+<div class="modal-overlay" id="twoFactorModal">
+    <div class="modal-box">
+        <button class="x-close" onclick="closeTwoFactor()">×</button>
+        <h2 id="twoFactorTitle">Security Verification</h2>
+        
+        <!-- Step 1: Master Password -->
+        <div id="twoFactorStep1">
+            <p>Verification step 1: Enter your Master Password to proceed.</p>
+            <div class="field">
+                <label>Master Password</label>
+                <input type="password" id="tfMasterPassword" placeholder="Enter master password">
             </div>
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('restoreModal')">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmRestore()">Restore Backup</button>
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="closeTwoFactor()">Cancel</button>
+                <button type="button" class="confirm-btn" onclick="nextTwoFactorStep()">Next</button>
+            </div>
+        </div>
+
+        <!-- Step 2: PIN -->
+        <div id="twoFactorStep2" style="display: none;">
+            <p>Verification step 2: Enter your 6-digit PIN to authorize this action.</p>
+            <div class="field">
+                <label>6-Digit PIN</label>
+                <input type="password" id="tfPin" maxlength="6" placeholder="******" style="text-align: center; letter-spacing: 5px; font-size: 18px; font-weight: 700;">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="prevTwoFactorStep()">Back</button>
+                <button type="button" class="confirm-btn" onclick="submitTwoFactor()">Authorize Action</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Create Backup Progress Modal -->
-<div id="progressModal" class="modal hidden">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>⏳ Creating Backup...</h3>
-        </div>
-        <div class="modal-body">
-            <div class="progress-bar">
-                <div class="progress-fill" id="backupProgress" style="width: 0%"></div>
-            </div>
-            <p id="progressText">Initializing...</p>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
 <script>
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    let tfCallback = null;
+
     document.addEventListener('DOMContentLoaded', function () {
         loadBackupHistory();
         loadBackupStats();
     });
 
+    function requireTwoFactor(callback) {
+        tfCallback = callback;
+        document.getElementById('tfMasterPassword').value = '';
+        document.getElementById('tfPin').value = '';
+        document.getElementById('twoFactorStep1').style.display = 'block';
+        document.getElementById('twoFactorStep2').style.display = 'none';
+        document.getElementById('twoFactorModal').classList.add('show');
+    }
+
+    function closeTwoFactor() {
+        document.getElementById('twoFactorModal').classList.remove('show');
+        tfCallback = null;
+    }
+
+    function nextTwoFactorStep() {
+        const password = document.getElementById('tfMasterPassword').value;
+        if (!password) {
+            showToast('Master password is required', 'error');
+            return;
+        }
+        document.getElementById('twoFactorStep1').style.display = 'none';
+        document.getElementById('twoFactorStep2').style.display = 'block';
+        document.getElementById('tfPin').focus();
+    }
+
+    function prevTwoFactorStep() {
+        document.getElementById('twoFactorStep1').style.display = 'block';
+        document.getElementById('twoFactorStep2').style.display = 'none';
+    }
+
+    function submitTwoFactor() {
+        const password = document.getElementById('tfMasterPassword').value;
+        const pin = document.getElementById('tfPin').value;
+        if (!pin || pin.length !== 6 || isNaN(pin)) {
+            showToast('6-digit PIN is required', 'error');
+            return;
+        }
+        
+        const callback = tfCallback;
+        closeTwoFactor();
+        if (callback) {
+            callback(password, pin);
+        }
+    }
+
     function loadBackupHistory() {
         fetch('/backup/history')
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.backups && data.backups.length > 0) {
                     renderBackupList(data.backups);
+                } else {
+                    document.getElementById('backupList').innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted);">No backups found</td>
+                        </tr>
+                    `;
                 }
-            })
-            .catch(error => {
-                console.error('Error loading backup history:', error);
             });
     }
 
     function loadBackupStats() {
         fetch('/backup/stats')
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 document.getElementById('totalBackups').textContent = data.total || 0;
                 document.getElementById('lastBackup').textContent = data.last || 'Never';
-                document.getElementById('storageUsed').textContent = data.storage || '0 MB';
-            })
-            .catch(error => {
-                console.error('Error loading backup stats:', error);
+                document.getElementById('storageUsed').textContent = formatSize(data.storage || 0);
             });
     }
 
     function renderBackupList(backups) {
         const tbody = document.getElementById('backupList');
-        tbody.innerHTML = backups.map(backup => `
-        <tr>
-            <td>#${backup.id}</td>
-            <td>${formatDate(backup.created_at)}</td>
-            <td>${formatSize(backup.size)}</td>
-            <td>${backup.items}</td>
-            <td><span class="status-badge ${backup.status}">${backup.status}</span></td>
-            <td>
-                <button class="btn-sm btn-primary" onclick="downloadBackup(${backup.id})">📥 Download</button>
-                <button class="btn-sm btn-success" onclick="showRestoreModal(${backup.id})">🔄 Restore</button>
-                <button class="btn-sm btn-danger" onclick="deleteBackup(${backup.id})">🗑️ Delete</button>
-            </td>
-        </tr>
-    `).join('');
+        tbody.innerHTML = backups.map(backup => {
+            let statusClass = 'not-verified';
+            let statusText = backup.status || 'Not Verified';
+            
+            if (statusText === 'Verified') {
+                statusClass = 'verified';
+            } else if (statusText === 'Failed') {
+                statusClass = 'failed';
+            } else if (statusText === 'Corrupted') {
+                statusClass = 'corrupted';
+            } else {
+                statusClass = 'not-verified';
+            }
+            
+            return `
+            <tr>
+                <td style="word-break: break-all; font-weight: 500;">${backup.file_name}</td>
+                <td>${formatDate(backup.created_at)}</td>
+                <td>${formatSize(backup.file_size)}</td>
+                <td>${backup.items_count}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>
+                    <div class="row-actions">
+                        <button class="dl-btn" onclick="downloadBackup('${backup.file_name}')">Download</button>
+                        <button class="rest-btn" onclick="showRestoreModal('${backup.file_name}')">Restore</button>
+                        <button class="verify-btn" onclick="verifyBackup('${backup.file_name}')">Verify</button>
+                        <button class="del-btn" onclick="deleteBackup('${backup.file_name}')">Delete</button>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }).join('');
     }
 
     function createBackup() {
-        document.getElementById('progressModal').classList.remove('hidden');
-        const progress = document.getElementById('backupProgress');
-        const text = document.getElementById('progressText');
-
-        let currentProgress = 0;
-        const interval = setInterval(() => {
-            currentProgress += 10;
-            progress.style.width = currentProgress + '%';
-            text.textContent = `Creating backup... ${currentProgress}%`;
-            if (currentProgress >= 100) {
-                clearInterval(interval);
-            }
-        }, 500);
-
-        fetch('/backup/create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-            .then(response => response.json())
-            .then(data => {
-                setTimeout(() => {
+        requireTwoFactor((password, pin) => {
+            document.getElementById('progressTitle').textContent = 'Creating Backup...';
+            document.getElementById('progressText').textContent = 'Initializing...';
+            document.getElementById('backupProgress').style.width = '0%';
+            document.getElementById('progressModal').classList.add('show');
+            
+            let currentProgress = 0;
+            const interval = setInterval(() => {
+                currentProgress += 10;
+                document.getElementById('backupProgress').style.width = currentProgress + '%';
+                document.getElementById('progressText').textContent = `Creating backup... ${currentProgress}%`;
+                if (currentProgress >= 90) {
                     clearInterval(interval);
-                    progress.style.width = '100%';
-                    text.textContent = '✅ Backup created successfully!';
-                    document.getElementById('progressModal').classList.add('hidden');
-                    loadBackupHistory();
-                    loadBackupStats();
-                    showNotification('Backup created successfully!', 'success');
-                }, 2000);
+                }
+            }, 200);
+
+            fetch('/backup/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+                body: JSON.stringify({ master_password: password, pin: pin })
             })
-            .catch(error => {
-                clearInterval(interval);
-                document.getElementById('progressModal').classList.add('hidden');
-                showNotification('Error creating backup', 'error');
-                console.error('Error creating backup:', error);
-            });
+                .then(r => {
+                    if (r.status === 401) throw new Error("Invalid credentials");
+                    return r.json();
+                })
+                .then(data => {
+                    clearInterval(interval);
+                    document.getElementById('backupProgress').style.width = '100%';
+                    if (data.success) {
+                        document.getElementById('progressText').textContent = 'Backup created successfully!';
+                        setTimeout(() => {
+                            document.getElementById('progressModal').classList.remove('show');
+                            loadBackupHistory();
+                            loadBackupStats();
+                            showToast('Backup created successfully!', 'success');
+                        }, 1000);
+                    } else {
+                        document.getElementById('progressModal').classList.remove('show');
+                        showToast('Error: ' + data.error, 'error');
+                    }
+                })
+                .catch((e) => {
+                    clearInterval(interval);
+                    document.getElementById('progressModal').classList.remove('show');
+                    showToast(e.message || 'Error creating backup', 'error');
+                });
+        });
     }
 
-    function downloadBackup(id) {
-        window.location.href = `/backup/download/${id}`;
+    function downloadBackup(file_name) {
+        requireTwoFactor((password, pin) => {
+            window.location.href = `/backup/download/${file_name}?master_password=${encodeURIComponent(password)}&pin=${encodeURIComponent(pin)}`;
+        });
     }
 
-    function showRestoreModal(id) {
-        fetch(`/backup/details/${id}`)
-            .then(response => response.json())
+    let restoreBackupId = null;
+
+    function showRestoreModal(file_name) {
+        restoreBackupId = file_name;
+        document.getElementById('restoreId').textContent = file_name;
+        document.getElementById('restoreDate').textContent = 'Loading...';
+        document.getElementById('restoreItems').textContent = 'Loading...';
+        document.getElementById('restoreMode').value = 'merge';
+        updateRestoreWarning();
+        document.getElementById('restoreModal').classList.add('show');
+        
+        fetch('/backup/history')
+            .then(r => r.json())
             .then(data => {
-                document.getElementById('restoreId').textContent = data.id;
-                document.getElementById('restoreDate').textContent = formatDate(data.created_at);
-                document.getElementById('restoreItems').textContent = data.items;
-                document.getElementById('restoreModal').classList.remove('hidden');
-                document.getElementById('restoreModal').dataset.backupId = id;
+                const b = data.backups.find(x => x.file_name === file_name);
+                if (b) {
+                    document.getElementById('restoreDate').textContent = formatDate(b.created_at);
+                    document.getElementById('restoreItems').textContent = b.items_count;
+                }
             });
+    }
+
+    function updateRestoreWarning() {
+        const mode = document.getElementById('restoreMode').value;
+        const warning = document.getElementById('restoreWarningBox');
+        if (mode === 'replace') {
+            warning.innerHTML = '⚠️ CAUTION: All current vault records (passwords, banking, identity, and notes) will be PERMANENTLY DELETED before restoring the backup! A safety backup will be created automatically first.';
+            warning.style.color = '#ef4444';
+            warning.style.background = 'rgba(239, 68, 68, 0.1)';
+        } else {
+            warning.innerHTML = '⚠️ Note: Backup contents will be merged with your current vault records. Existing items with matching names will be updated.';
+            warning.style.color = '#eab308';
+            warning.style.background = 'rgba(234, 179, 8, 0.08)';
+        }
+    }
+
+    function closeRestore() {
+        document.getElementById('restoreModal').classList.remove('show');
+        restoreBackupId = null;
     }
 
     function confirmRestore() {
-        const id = document.getElementById('restoreModal').dataset.backupId;
-        if (!id) return;
+        if (!restoreBackupId) return;
+        const mode = document.getElementById('restoreMode').value;
+        
+        if (mode === 'replace') {
+            const confirmText = 'Are you absolutely sure you want to REPLACE all current vault data? This cannot be undone!';
+            if (!confirm(confirmText)) return;
+        }
+        
+        closeRestore();
+        
+        requireTwoFactor((password, pin) => {
+            document.getElementById('progressTitle').textContent = 'Restoring Backup...';
+            document.getElementById('progressText').textContent = 'Decrypting and restoring databases...';
+            document.getElementById('backupProgress').style.width = '50%';
+            document.getElementById('progressModal').classList.add('show');
 
-        if (confirm('Are you sure you want to restore this backup? This action cannot be undone!')) {
-            fetch(`/backup/restore/${id}`, {
+            fetch(`/backup/restore/${restoreBackupId}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+                body: JSON.stringify({ master_password: password, pin: pin, mode: mode })
             })
-                .then(response => response.json())
+                .then(r => {
+                    if (r.status === 401) throw new Error("Invalid credentials");
+                    return r.json();
+                })
                 .then(data => {
+                    document.getElementById('backupProgress').style.width = '100%';
                     if (data.success) {
-                        showNotification('Backup restored successfully!', 'success');
-                        document.getElementById('restoreModal').classList.add('hidden');
-                        loadBackupHistory();
+                        document.getElementById('progressText').textContent = 'Restore completed!';
+                        setTimeout(() => {
+                            document.getElementById('progressModal').classList.remove('show');
+                            showToast('Backup restored successfully!', 'success');
+                            loadBackupHistory();
+                        }, 1000);
                     } else {
-                        showNotification('Error restoring backup: ' + data.error, 'error');
+                        document.getElementById('progressModal').classList.remove('show');
+                        showToast('Error restoring: ' + data.error, 'error');
                     }
                 })
-                .catch(error => {
-                    showNotification('Error restoring backup', 'error');
-                    console.error('Error restoring backup:', error);
+                .catch((e) => {
+                    document.getElementById('progressModal').classList.remove('show');
+                    showToast(e.message || 'Error restoring backup', 'error');
                 });
-        }
+        });
     }
 
-    function deleteBackup(id) {
-        if (confirm('Are you sure you want to delete this backup?')) {
-            fetch(`/backup/delete/${id}`, {
-                method: 'DELETE'
+    function verifyBackup(file_name) {
+        requireTwoFactor((password, pin) => {
+            showToast('Verifying backup file...', 'info');
+            fetch(`/backup/verify/${file_name}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+                body: JSON.stringify({ master_password: password, pin: pin })
             })
-                .then(response => response.json())
+                .then(r => {
+                    if (r.status === 401) throw new Error("Invalid credentials");
+                    return r.json();
+                })
                 .then(data => {
                     if (data.success) {
-                        showNotification('Backup deleted successfully!', 'success');
+                        showToast(data.message, data.status === 'Verified' ? 'success' : 'error');
+                        loadBackupHistory();
+                    } else {
+                        showToast('Verification failed: ' + data.error, 'error');
+                    }
+                })
+                .catch((e) => showToast(e.message || 'Error verifying backup', 'error'));
+        });
+    }
+
+    function deleteBackup(file_name) {
+        if (!confirm('Are you sure you want to delete this backup?')) return;
+        requireTwoFactor((password, pin) => {
+            fetch(`/backup/delete/${file_name}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+                body: JSON.stringify({ master_password: password, pin: pin })
+            })
+                .then(r => {
+                    if (r.status === 401) throw new Error("Invalid credentials");
+                    return r.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        showToast('Backup deleted successfully', 'success');
                         loadBackupHistory();
                         loadBackupStats();
                     } else {
-                        showNotification('Error deleting backup: ' + data.error, 'error');
+                        showToast('Error deleting: ' + data.error, 'error');
                     }
                 })
-                .catch(error => {
-                    showNotification('Error deleting backup', 'error');
-                    console.error('Error deleting backup:', error);
-                });
-        }
+                .catch((e) => showToast(e.message || 'Error deleting backup', 'error'));
+        });
     }
 
-    function showImportModal() {
-        document.getElementById('importModal').classList.remove('hidden');
+    function openImport() {
+        document.getElementById('importForm').reset();
+        document.getElementById('importModal').classList.add('show');
     }
 
-    function closeModal(id) {
-        document.getElementById(id).classList.add('hidden');
+    function closeImport() {
+        document.getElementById('importModal').classList.remove('show');
     }
 
     document.getElementById('importForm').addEventListener('submit', function (e) {
         e.preventDefault();
-        const formData = new FormData();
         const file = document.getElementById('backupFile').files[0];
-        const password = document.getElementById('importPassword').value;
+        const mode = document.getElementById('importMode').value;
 
-        if (!file) {
-            showNotification('Please select a backup file', 'error');
-            return;
+        if (!file) return;
+
+        if (mode === 'replace') {
+            const confirmText = 'Are you absolutely sure you want to REPLACE all current vault data with the uploaded file? This will overwrite everything and cannot be undone! A safety backup will be created automatically first.';
+            if (!confirm(confirmText)) return;
         }
 
-        formData.append('file', file);
-        formData.append('password', password);
+        closeImport();
 
-        fetch('/backup/import', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('Backup imported successfully!', 'success');
-                    document.getElementById('importModal').classList.add('hidden');
-                    loadBackupHistory();
-                    loadBackupStats();
-                    document.getElementById('importForm').reset();
-                } else {
-                    showNotification('Error importing backup: ' + data.error, 'error');
-                }
+        requireTwoFactor((password, pin) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('master_password', password);
+            formData.append('pin', pin);
+            formData.append('mode', mode);
+
+            showToast('Restoring backup file...', 'info');
+
+            fetch('/backup/import', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrf },
+                body: formData
             })
-            .catch(error => {
-                showNotification('Error importing backup', 'error');
-                console.error('Error importing backup:', error);
-            });
+                .then(r => {
+                    if (r.status === 401) throw new Error("Invalid credentials");
+                    return r.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        showToast('Backup restored successfully!', 'success');
+                        loadBackupHistory();
+                        loadBackupStats();
+                    } else {
+                        showToast('Error restoring: ' + data.error, 'error');
+                    }
+                })
+                .catch((e) => showToast(e.message || 'Error restoring backup', 'error'));
+        });
     });
 
     function formatDate(dateString) {
@@ -338,19 +862,22 @@
     }
 
     function formatSize(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
         if (bytes < 1024) return bytes + ' B';
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
-    function showNotification(message, type) {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        setTimeout(() => {
-            notification.remove();
-        }, 5000);
-    }
+    document.getElementById('importModal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeImport();
+    });
+
+    document.getElementById('restoreModal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeRestore();
+    });
+
+    document.getElementById('twoFactorModal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeTwoFactor();
+    });
 </script>
 {% endblock %}

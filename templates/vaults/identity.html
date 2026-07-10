@@ -853,6 +853,7 @@
         secretVisible = {};
         renderDetails();
         document.getElementById('detailsModal').classList.add('show');
+        logViewAction(id);
     }
 
     function renderDetails() {
@@ -922,7 +923,12 @@
     }
 
     function copyText(text) {
-        navigator.clipboard.writeText(text).then(() => showToast('Copied', 'success'));
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Copied', 'success');
+            if (currentDetailId) {
+                logCopyAction(currentDetailId);
+            }
+        });
     }
 
     function closeDetails() {

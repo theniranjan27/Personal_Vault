@@ -75,8 +75,8 @@ def add_item():
         
         audit_service.log_action(
             user_id=user_id,
-            action='add_item',
-            details={'item_id': item.id, 'category': 'banking'}
+            action='add',
+            details={'item_id': item.id, 'category': 'banking', 'label': item.label}
         )
         
         return jsonify({'success': True, 'id': item.id})
@@ -87,6 +87,7 @@ def add_item():
 
 
 @banking_bp.route('/update/<int:item_id>', methods=['PUT'])
+@banking_bp.route('/edit/<int:item_id>', methods=['PUT'])
 @csrf.exempt
 @login_required
 def update_item(item_id):
@@ -109,9 +110,14 @@ def update_item(item_id):
             item.notes = data['notes']
         if 'extra' in data:
             item.extra = json.dumps(data['extra']) if data['extra'] else None
-        
         item.updated_at = datetime.utcnow()
         db.session.commit()
+        
+        audit_service.log_action(
+            user_id=user_id,
+            action='edit',
+            details={'item_id': item.id, 'category': 'banking', 'label': item.label}
+        )
         
         return jsonify({'success': True})
         
@@ -130,6 +136,12 @@ def delete_item(item_id):
         item = VaultItem.query.filter_by(id=item_id, user_id=user_id, category='banking').first()
         if not item:
             return jsonify({'error': 'Item not found'}), 404
+        
+        audit_service.log_action(
+            user_id=user_id,
+            action='delete',
+            details={'item_id': item_id, 'category': 'banking', 'label': item.label}
+        )
         
         db.session.delete(item)
         db.session.commit()

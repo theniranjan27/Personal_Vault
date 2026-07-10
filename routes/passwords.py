@@ -89,8 +89,8 @@ def add_item():
         
         audit_service.log_action(
             user_id=user_id,
-            action='add_item',
-            details={'item_id': item.id, 'category': 'passwords'}
+            action='add',
+            details={'item_id': item.id, 'category': 'passwords', 'label': item.label}
         )
         
         return jsonify({'success': True, 'id': item.id})
@@ -137,6 +137,12 @@ def update_item(item_id):
         item.updated_at = datetime.utcnow()
         db.session.commit()
         
+        audit_service.log_action(
+            user_id=user_id,
+            action='edit',
+            details={'item_id': item.id, 'category': 'passwords', 'label': item.label}
+        )
+        
         return jsonify({'success': True})
         
     except Exception as e:
@@ -154,6 +160,12 @@ def delete_item(item_id):
         item = VaultItem.query.filter_by(id=item_id, user_id=user_id, category='passwords').first()
         if not item:
             return jsonify({'error': 'Item not found'}), 404
+        
+        audit_service.log_action(
+            user_id=user_id,
+            action='delete',
+            details={'item_id': item_id, 'category': 'passwords', 'label': item.label}
+        )
         
         db.session.delete(item)
         db.session.commit()

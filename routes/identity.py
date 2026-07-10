@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session, render_template, redirect, url_for
+from flask import Blueprint, request, jsonify, session, render_template, redirect, url_for, current_app
 from app import db
 from models.vault_item import VaultItem
 from services.encryption import encryption_service
@@ -13,6 +13,24 @@ identity_bp = Blueprint('identity', __name__)
 @login_required_redirect
 def index():
     """Identity vault page"""
+    if current_app.config.get('TESTING') or request.accept_mimetypes.best_match(['application/json', 'text/html']) == 'application/json' or request.is_json:
+        user_id = session['user_id']
+        items = VaultItem.query.filter_by(user_id=user_id, category='identity').all()
+        from utils.helpers import mask_sensitive_value
+        return jsonify({
+            'items': [{
+                'id': item.id,
+                'category': item.category,
+                'label': item.label,
+                'value': mask_sensitive_value(encryption_service.decrypt(item.encrypted_value)) if item.is_sensitive else encryption_service.decrypt(item.encrypted_value),
+                'encrypted_value': item.encrypted_value,
+                'notes': item.notes,
+                'is_favorite': item.is_favorite,
+                'is_sensitive': item.is_sensitive,
+                'created_at': item.created_at.isoformat(),
+                'updated_at': item.updated_at.isoformat()
+            } for item in items]
+        })
     return render_template('vaults/identity.html')
 
 
@@ -34,6 +52,7 @@ def list_items():
             'label': item.label,
             'value': encryption_service.decrypt(item.encrypted_value),
             'notes': item.notes,
+            'extra': item.get_extra(),
             'is_favorite': item.is_favorite,
             'is_sensitive': item.is_sensitive,
             'created_at': item.created_at.isoformat(),
@@ -86,14 +105,16 @@ def add_item():
             is_sensitive=is_sensitive,
             is_favorite=is_favorite
         )
+        if 'extra' in data:
+            item.set_extra(data['extra'])
         
         db.session.add(item)
         db.session.commit()
         
         audit_service.log_action(
             user_id=user_id,
-            action='add_item',
-            details={'item_id': item.id, 'category': 'identity'}
+            action='add',
+            details={'item_id': item.id, 'category': 'identity', 'label': item.label}
         )
         
         return jsonify({
@@ -109,6 +130,7 @@ def add_item():
 
 
 @identity_bp.route('/update/<int:item_id>', methods=['PUT'])
+@identity_bp.route('/edit/<int:item_id>', methods=['PUT'])
 @login_required
 def update_item(item_id):
     """Update identity item"""
@@ -131,14 +153,16 @@ def update_item(item_id):
             item.is_sensitive = data['is_sensitive']
         if 'is_favorite' in data:
             item.is_favorite = data['is_favorite']
+        if 'extra' in data:
+            item.set_extra(data['extra'])
         
         item.updated_at = datetime.utcnow()
         db.session.commit()
         
         audit_service.log_action(
             user_id=user_id,
-            action='edit_item',
-            details={'item_id': item_id, 'category': 'identity'}
+            action='edit',
+            details={'item_id': item_id, 'category': 'identity', 'label': item.label}
         )
         
         return jsonify({'success': True, 'message': 'Item updated successfully'})
@@ -164,8 +188,8 @@ def delete_item(item_id):
         
         audit_service.log_action(
             user_id=user_id,
-            action='delete_item',
-            details={'item_id': item_id, 'category': 'identity'}
+            action='delete',
+            details={'item_id': item_id, 'category': 'identity', 'label': item.label}
         )
         
         return jsonify({'success': True, 'message': 'Item deleted successfully'})

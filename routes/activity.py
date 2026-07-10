@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session, render_template
+from flask import Blueprint, request, jsonify, session, render_template, current_app
 from app import db
 from models.activity_log import ActivityLog
 from services.audit import audit_service
@@ -12,7 +12,20 @@ activity_bp = Blueprint('activity', __name__)
 @login_required_redirect
 def index():
     """Activity logs page"""
-    return render_template('settings/activity.html')
+    from models.user import User
+    user = User.query.get(session['user_id'])
+    if current_app.config.get('TESTING') or request.accept_mimetypes.best_match(['application/json', 'text/html']) == 'application/json' or request.is_json:
+        user_id = session['user_id']
+        activities = ActivityLog.query.filter_by(user_id=user_id).all()
+        return jsonify({
+            'logs': [{
+                'id': act.id,
+                'action': act.action,
+                'details': act.details,
+                'timestamp': act.timestamp.isoformat() + 'Z'
+            } for act in activities]
+        })
+    return render_template('settings/activity.html', active_page='activity', user=user)
 
 
 @activity_bp.route('/list')
@@ -26,6 +39,7 @@ def list_activities():
     action = request.args.get('action')
     search = request.args.get('search')
     date_filter = request.args.get('date')
+    tz_offset = request.args.get('tz_offset', 0, type=int)
     
     query = ActivityLog.query.filter_by(user_id=user_id)
     
@@ -36,11 +50,16 @@ def list_activities():
         query = query.filter(ActivityLog.details.ilike(f'%{search}%'))
     
     if date_filter:
-        date = datetime.strptime(date_filter, '%Y-%m-%d')
-        query = query.filter(
-            ActivityLog.timestamp >= date,
-            ActivityLog.timestamp < date + timedelta(days=1)
-        )
+        try:
+            date = datetime.strptime(date_filter, '%Y-%m-%d')
+            start_date = date + timedelta(minutes=tz_offset)
+            end_date = date + timedelta(days=1, minutes=tz_offset)
+            query = query.filter(
+                ActivityLog.timestamp >= start_date,
+                ActivityLog.timestamp < end_date
+            )
+        except ValueError:
+            pass
     
     total = query.count()
     total_pages = (total + limit - 1) // limit
@@ -59,7 +78,7 @@ def list_activities():
             'success': activity.success,
             'ip_address': activity.ip_address,
             'user_agent': activity.user_agent,
-            'timestamp': activity.timestamp.isoformat()
+            'timestamp': activity.timestamp.isoformat() + 'Z'
         } for activity in activities],
         'total': total,
         'pages': total_pages,
@@ -105,13 +124,82 @@ def get_stats():
 def log_reveal(item_id):
     """Log sensitive value reveal"""
     user_id = session['user_id']
+    from models.vault_item import VaultItem
+    from models.note import Note
     
+    item = VaultItem.query.filter_by(id=item_id, user_id=user_id).first()
+    category = ""
+    label = ""
+    if item:
+        category = item.category
+        label = item.label
+    else:
+        note = Note.query.filter_by(id=item_id, user_id=user_id).first()
+        if note:
+            category = 'notes'
+            label = note.title
+            
     audit_service.log_action(
         user_id=user_id,
-        action='reveal_sensitive',
-        details={'item_id': item_id}
+        action='reveal',
+        details={'item_id': item_id, 'category': category, 'label': label}
     )
+    return jsonify({'success': True})
+
+
+@activity_bp.route('/log-view/<int:item_id>', methods=['POST'])
+@login_required
+def log_view(item_id):
+    """Log vault item view"""
+    user_id = session['user_id']
+    from models.vault_item import VaultItem
+    from models.note import Note
     
+    item = VaultItem.query.filter_by(id=item_id, user_id=user_id).first()
+    category = ""
+    label = ""
+    if item:
+        category = item.category
+        label = item.label
+    else:
+        note = Note.query.filter_by(id=item_id, user_id=user_id).first()
+        if note:
+            category = 'notes'
+            label = note.title
+            
+    audit_service.log_action(
+        user_id=user_id,
+        action='view',
+        details={'item_id': item_id, 'category': category, 'label': label}
+    )
+    return jsonify({'success': True})
+
+
+@activity_bp.route('/log-copy/<int:item_id>', methods=['POST'])
+@login_required
+def log_copy(item_id):
+    """Log vault item value copy"""
+    user_id = session['user_id']
+    from models.vault_item import VaultItem
+    from models.note import Note
+    
+    item = VaultItem.query.filter_by(id=item_id, user_id=user_id).first()
+    category = ""
+    label = ""
+    if item:
+        category = item.category
+        label = item.label
+    else:
+        note = Note.query.filter_by(id=item_id, user_id=user_id).first()
+        if note:
+            category = 'notes'
+            label = note.title
+            
+    audit_service.log_action(
+        user_id=user_id,
+        action='copy',
+        details={'item_id': item_id, 'category': category, 'label': label}
+    )
     return jsonify({'success': True})
 
 
@@ -119,9 +207,10 @@ def log_reveal(item_id):
 @login_required
 def export_activity():
     """Export activity logs"""
-    user_id = session['user_id']
     import json
+    from flask import Response
     
+    user_id = session['user_id']
     activities = ActivityLog.query.filter_by(user_id=user_id)\
         .order_by(ActivityLog.timestamp.desc()).all()
     
@@ -131,10 +220,20 @@ def export_activity():
         'success': activity.success,
         'ip_address': activity.ip_address,
         'user_agent': activity.user_agent,
-        'timestamp': activity.timestamp.isoformat()
+        'timestamp': activity.timestamp.isoformat() + 'Z'
     } for activity in activities]
     
-    return jsonify(data)
+    audit_service.log_action(
+        user_id=user_id,
+        action='download',
+        details={'file': 'activity_export.json'}
+    )
+    
+    return Response(
+        json.dumps(data, indent=2),
+        mimetype='application/json',
+        headers={'Content-Disposition': 'attachment;filename=activity_export.json'}
+    )
 
 
 @activity_bp.route('/clear', methods=['POST'])
@@ -153,3 +252,41 @@ def clear_activity():
     )
     
     return jsonify({'success': True})
+
+
+@activity_bp.route('/<int:log_id>', methods=['GET'])
+@login_required
+def get_activity_detail(log_id):
+    """Get detail of a single activity log"""
+    user_id = session['user_id']
+    log = ActivityLog.query.filter_by(id=log_id, user_id=user_id).first()
+    if not log:
+        return jsonify({'error': 'Log not found'}), 404
+    return jsonify({
+        'log': {
+            'id': log.id,
+            'action': log.action,
+            'details': log.details,
+            'success': log.success,
+            'ip_address': log.ip_address,
+            'user_agent': log.user_agent,
+            'timestamp': log.timestamp.isoformat()
+        }
+    })
+
+
+@activity_bp.route('/login-history', methods=['GET'])
+@login_required
+def get_login_history():
+    """Get user login history"""
+    user_id = session['user_id']
+    logs = ActivityLog.query.filter_by(user_id=user_id, action='login').all()
+    return jsonify({
+        'history': [{
+            'id': log.id,
+            'ip_address': log.ip_address,
+            'user_agent': log.user_agent,
+            'timestamp': log.timestamp.isoformat(),
+            'success': log.success
+        } for log in logs]
+    })

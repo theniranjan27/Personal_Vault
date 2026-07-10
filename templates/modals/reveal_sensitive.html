@@ -379,8 +379,10 @@
     }
 
     function logReveal(itemId) {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         fetch(`/activity/log-reveal/${itemId}`, {
-            method: 'POST'
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf }
         }).catch(error => console.error('Error logging reveal:', error));
     }
 

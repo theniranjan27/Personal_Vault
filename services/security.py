@@ -167,7 +167,7 @@ class SecurityService:
         user.failed_attempts += 1
         locked = False
         
-        if user.failed_attempts >= self.max_attempts:
+        if user.failed_attempts > self.max_attempts:
             user.locked_until = datetime.utcnow() + timedelta(minutes=self.lockout_minutes)
             locked = True
         

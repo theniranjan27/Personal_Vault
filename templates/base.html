@@ -390,18 +390,22 @@
         }
 
         .topbar .right .logout {
-            padding: 5px 16px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             background: transparent;
             border: 1px solid var(--border);
             border-radius: var(--radius);
             color: var(--text-muted);
             cursor: pointer;
-            font-size: 12px;
             transition: var(--transition);
         }
 
         .topbar .right .logout:hover {
-            border-color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.4);
+            background: rgba(239, 68, 68, 0.08);
             color: var(--danger);
         }
 
@@ -643,11 +647,9 @@
                 </div>
             </div>
             <div class="right">
-                <div class="user">
-                    <span class="name">{{ user.full_name if user else 'Admin' }}</span>
-                    <span class="avatar">{{ (user.full_name[0] if user and user.full_name else 'A')|upper }}</span>
-                </div>
-                <button class="logout" onclick="doLogout()">Logout</button>
+                <button class="logout" onclick="doLogout()" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
             </div>
         </header>
 
@@ -677,7 +679,11 @@
 
         function doLogout() {
             if (confirm('Logout?')) {
-                fetch('/auth/logout', { method: 'POST' })
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                fetch('/auth/logout', { 
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrf }
+                })
                     .then(() => window.location.href = '/auth/login')
                     .catch(() => window.location.href = '/auth/login');
             }
@@ -689,6 +695,33 @@
             el.textContent = msg;
             document.body.appendChild(el);
             setTimeout(() => el.remove(), 3500);
+        }
+
+        function logCopyAction(itemId) {
+            if (!itemId) return;
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            fetch(`/activity/log-copy/${itemId}`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrf }
+            }).catch(e => console.error('Error logging copy:', e));
+        }
+
+        function logRevealAction(itemId) {
+            if (!itemId) return;
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            fetch(`/activity/log-reveal/${itemId}`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrf }
+            }).catch(e => console.error('Error logging reveal:', e));
+        }
+
+        function logViewAction(itemId) {
+            if (!itemId) return;
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            fetch(`/activity/log-view/${itemId}`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrf }
+            }).catch(e => console.error('Error logging view:', e));
         }
     </script>
 

@@ -46,7 +46,7 @@ class Middleware:
             return response
     
     def log_request(self):
-        app.logger.info(f'{request.method} {request.path} - {request.remote_addr}')
+        self.app.logger.info(f'{request.method} {request.path} - {request.remote_addr}')
     
     def add_cors_headers(self, response):
         response.headers['Access-Control-Allow-Origin'] = '*'
